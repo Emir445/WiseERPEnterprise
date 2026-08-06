@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+﻿import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -14,10 +14,12 @@ async function bootstrap(): Promise<void> {
   app.setGlobalPrefix('api');
   app.use(helmet());
   app.use(compression());
+
   app.enableCors({
     origin: true,
     credentials: true,
   });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -30,10 +32,22 @@ async function bootstrap(): Promise<void> {
     .setTitle('Wise One API')
     .setDescription('API da plataforma Wise One Enterprise')
     .setVersion('0.1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        in: 'header',
+      },
+      'bearer',
+    )
     .build();
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  const document = SwaggerModule.createDocument(
+    app,
+    swaggerConfig,
+  );
+
   SwaggerModule.setup('docs', app, document);
 
   const port = config.get<number>('PORT', 3000);

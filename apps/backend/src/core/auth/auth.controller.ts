@@ -59,7 +59,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('bearer')
   @ApiOperation({
     summary: 'Consultar usuário autenticado',
   })

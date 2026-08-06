@@ -6,7 +6,6 @@
   Param,
   Patch,
   Post,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -20,66 +19,71 @@ import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../../core/auth/interfaces/jwt-payload.interface';
 import { Permissions } from '../../core/permissions/decorators/permissions.decorator';
 import { PermissionsGuard } from '../../core/permissions/guards/permissions.guard';
-import { CreateUserDto } from './dto/create-user.dto';
-import { ListUsersQueryDto } from './dto/list-users-query.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UsersService } from './users.service';
+import { CreatePermissionDto } from './dto/create-permission.dto';
+import { UpdatePermissionDto } from './dto/update-permission.dto';
+import { PermissionsService } from './permissions.service';
 
-@ApiTags('Usuários')
+@ApiTags('Permissões')
 @ApiBearerAuth('bearer')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
-@Controller('users')
-export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+@Controller('permissions')
+export class PermissionsController {
+  constructor(
+    private readonly permissionsService: PermissionsService,
+  ) {}
 
   @Post()
-  @Permissions('users.create')
-  @ApiOperation({ summary: 'Criar usuário' })
+  @Permissions('permissions.create')
+  @ApiOperation({
+    summary: 'Criar permissão',
+  })
   create(
     @CurrentUser() currentUser: JwtPayload,
-    @Body() dto: CreateUserDto,
+    @Body() dto: CreatePermissionDto,
   ) {
-    return this.usersService.create(
+    return this.permissionsService.create(
       currentUser.companyId,
       dto,
     );
   }
 
   @Get()
-  @Permissions('users.read')
-  @ApiOperation({ summary: 'Listar usuários' })
-  findAll(
-    @CurrentUser() currentUser: JwtPayload,
-    @Query() query: ListUsersQueryDto,
-  ) {
-    return this.usersService.findAll(
+  @Permissions('permissions.read')
+  @ApiOperation({
+    summary: 'Listar permissões',
+  })
+  findAll(@CurrentUser() currentUser: JwtPayload) {
+    return this.permissionsService.findAll(
       currentUser.companyId,
-      query,
     );
   }
 
   @Get(':id')
-  @Permissions('users.read')
-  @ApiOperation({ summary: 'Consultar usuário' })
+  @Permissions('permissions.read')
+  @ApiOperation({
+    summary: 'Consultar permissão',
+  })
   findOne(
     @CurrentUser() currentUser: JwtPayload,
     @Param('id') id: string,
   ) {
-    return this.usersService.findOne(
+    return this.permissionsService.findOne(
       currentUser.companyId,
       id,
     );
   }
 
   @Patch(':id')
-  @Permissions('users.update')
-  @ApiOperation({ summary: 'Atualizar usuário' })
+  @Permissions('permissions.update')
+  @ApiOperation({
+    summary: 'Atualizar permissão',
+  })
   update(
     @CurrentUser() currentUser: JwtPayload,
     @Param('id') id: string,
-    @Body() dto: UpdateUserDto,
+    @Body() dto: UpdatePermissionDto,
   ) {
-    return this.usersService.update(
+    return this.permissionsService.update(
       currentUser.companyId,
       id,
       dto,
@@ -87,13 +91,15 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @Permissions('users.delete')
-  @ApiOperation({ summary: 'Inativar usuário' })
+  @Permissions('permissions.delete')
+  @ApiOperation({
+    summary: 'Inativar permissão',
+  })
   remove(
     @CurrentUser() currentUser: JwtPayload,
     @Param('id') id: string,
   ) {
-    return this.usersService.remove(
+    return this.permissionsService.remove(
       currentUser.companyId,
       id,
     );
