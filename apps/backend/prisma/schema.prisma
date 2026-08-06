@@ -21,45 +21,51 @@ enum UserStatus {
   INACTIVE
 }
 
-model Company {
-  id            String       @id @default(uuid()) @db.Uuid
-  legalName     String       @map("legal_name")
-  tradeName     String?      @map("trade_name")
-  document      String       @unique
-  email         String?
-  phone         String?
-  logoUrl       String?      @map("logo_url")
-  status        RecordStatus @default(ACTIVE)
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
-  deletedAt     DateTime?    @map("deleted_at")
+enum CustomerType {
+  INDIVIDUAL
+  BUSINESS
+}
 
-  branches      Branch[]
-  users         User[]
-  roles         Role[]
-  permissions   Permission[]
-  sessions      Session[]
-  auditLogs     AuditLog[]
+model Company {
+  id        String       @id @default(uuid()) @db.Uuid
+  legalName String       @map("legal_name")
+  tradeName String?      @map("trade_name")
+  document  String       @unique
+  email     String?
+  phone     String?
+  logoUrl   String?      @map("logo_url")
+  status    RecordStatus @default(ACTIVE)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  deletedAt DateTime?    @map("deleted_at")
+
+  branches    Branch[]
+  users       User[]
+  roles       Role[]
+  permissions Permission[]
+  sessions    Session[]
+  auditLogs   AuditLog[]
+  customers   Customer[]
 
   @@map("companies")
 }
 
 model Branch {
-  id          String       @id @default(uuid()) @db.Uuid
-  companyId   String       @map("company_id") @db.Uuid
-  name        String
-  code        String
-  document    String?
-  email       String?
-  phone       String?
-  status      RecordStatus @default(ACTIVE)
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
-  deletedAt   DateTime?    @map("deleted_at")
+  id        String       @id @default(uuid()) @db.Uuid
+  companyId String       @map("company_id") @db.Uuid
+  name      String
+  code      String
+  document  String?
+  email     String?
+  phone     String?
+  status    RecordStatus @default(ACTIVE)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  deletedAt DateTime?    @map("deleted_at")
 
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  users       User[]
-  auditLogs   AuditLog[]
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  users     User[]
+  auditLogs AuditLog[]
 
   @@unique([companyId, code])
   @@index([companyId, status])
@@ -67,23 +73,23 @@ model Branch {
 }
 
 model User {
-  id            String     @id @default(uuid()) @db.Uuid
-  companyId     String     @map("company_id") @db.Uuid
-  branchId      String?    @map("branch_id") @db.Uuid
-  name          String
-  email         String
-  passwordHash  String     @map("password_hash")
-  status        UserStatus @default(PENDING)
-  lastLoginAt   DateTime?  @map("last_login_at")
-  createdAt     DateTime   @default(now()) @map("created_at")
-  updatedAt     DateTime   @updatedAt @map("updated_at")
-  deletedAt     DateTime?  @map("deleted_at")
+  id           String     @id @default(uuid()) @db.Uuid
+  companyId    String     @map("company_id") @db.Uuid
+  branchId     String?    @map("branch_id") @db.Uuid
+  name         String
+  email        String
+  passwordHash String     @map("password_hash")
+  status       UserStatus @default(PENDING)
+  lastLoginAt  DateTime?  @map("last_login_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deletedAt    DateTime?  @map("deleted_at")
 
-  company       Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  branch        Branch?    @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  userRoles     UserRole[]
-  sessions      Session[]
-  auditLogs     AuditLog[] @relation("AuditActor")
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  branch    Branch?    @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  userRoles UserRole[]
+  sessions  Session[]
+  auditLogs AuditLog[] @relation("AuditActor")
 
   @@unique([companyId, email])
   @@index([companyId, status])
@@ -100,9 +106,9 @@ model Role {
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  userRoles   UserRole[]
-  grants      RolePermission[]
+  company   Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userRoles UserRole[]
+  grants    RolePermission[]
 
   @@unique([companyId, name])
   @@map("roles")
@@ -117,8 +123,8 @@ model Permission {
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  grants      RolePermission[]
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  grants  RolePermission[]
 
   @@unique([companyId, code])
   @@map("permissions")
@@ -129,38 +135,38 @@ model UserRole {
   roleId    String   @map("role_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([userId, roleId])
   @@map("user_roles")
 }
 
 model RolePermission {
-  roleId       String     @map("role_id") @db.Uuid
-  permissionId String     @map("permission_id") @db.Uuid
-  createdAt    DateTime   @default(now()) @map("created_at")
+  roleId       String   @map("role_id") @db.Uuid
+  permissionId String   @map("permission_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
   @@map("role_permissions")
 }
 
 model Session {
-  id               String   @id @default(uuid()) @db.Uuid
-  companyId        String   @map("company_id") @db.Uuid
-  userId           String   @map("user_id") @db.Uuid
-  refreshTokenHash String   @map("refresh_token_hash")
-  ipAddress        String?  @map("ip_address")
-  userAgent        String?  @map("user_agent")
-  expiresAt        DateTime @map("expires_at")
+  id               String    @id @default(uuid()) @db.Uuid
+  companyId        String    @map("company_id") @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  refreshTokenHash String    @map("refresh_token_hash")
+  ipAddress        String?   @map("ip_address")
+  userAgent        String?   @map("user_agent")
+  expiresAt        DateTime  @map("expires_at")
   revokedAt        DateTime? @map("revoked_at")
-  createdAt        DateTime @default(now()) @map("created_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
 
-  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, expiresAt])
   @@map("sessions")
@@ -180,11 +186,38 @@ model AuditLog {
   userAgent   String?  @map("user_agent")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  branch      Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  actor       User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  branch  Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  actor   User?   @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
 
   @@index([companyId, entity, entityId])
   @@index([actorUserId, createdAt])
   @@map("audit_logs")
+}
+
+model Customer {
+  id                    String       @id @default(uuid()) @db.Uuid
+  companyId             String       @map("company_id") @db.Uuid
+  type                  CustomerType @default(INDIVIDUAL)
+  name                  String
+  legalName             String?      @map("legal_name")
+  tradeName             String?      @map("trade_name")
+  document              String
+  stateRegistration     String?      @map("state_registration")
+  municipalRegistration String?      @map("municipal_registration")
+  email                 String?
+  phone                 String?
+  mobile                String?
+  notes                 String?
+  status                RecordStatus @default(ACTIVE)
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+  deletedAt             DateTime?    @map("deleted_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, document])
+  @@index([companyId, name])
+  @@index([companyId, status])
+  @@map("customers")
 }

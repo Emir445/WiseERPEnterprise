@@ -40,6 +40,10 @@ async function main(): Promise<void> {
     'permissions.read',
     'permissions.update',
     'permissions.delete',
+    'customers.create',
+    'customers.read',
+    'customers.update',
+    'customers.delete',
   ];
 
   for (const code of permissionCodes) {
@@ -88,3 +92,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
