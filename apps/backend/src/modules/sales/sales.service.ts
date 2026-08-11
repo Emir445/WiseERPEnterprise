@@ -253,19 +253,96 @@ export class SalesService {
   async cancel(companyId: string, id: string) {
     const sale = await this.findOne(companyId, id);
 
-    if (sale.status === 'CONFIRMED') {
-      throw new BadRequestException(
-        'Venda confirmada não pode ser cancelada diretamente.',
-      );
-    }
-
     if (sale.status === 'CANCELLED') {
       return sale;
     }
 
-    return this.prisma.sale.update({
-      where: { id },
-      data: { status: 'CANCELLED' },
+    if (sale.status === 'DRAFT') {
+      return this.prisma.sale.update({
+        where: { id },
+        data: { status: 'CANCELLED' },
+        include: this.includeRelations(),
+      });
+    }
+
+    const financialEntry = await this.prisma.financialEntry.findFirst({
+      where: {
+        companyId,
+        referenceType: 'SALE',
+        referenceId: sale.id,
+        type: 'RECEIVABLE',
+        deletedAt: null,
+      },
+    });
+
+    if (financialEntry?.paidAmount.greaterThan(0)) {
+      throw new BadRequestException(
+        'Venda com recebimento financeiro não pode ser cancelada diretamente.',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      for (const item of sale.items) {
+        const balance = await tx.inventoryBalance.findUnique({
+          where: {
+            branchId_productId: {
+              branchId: sale.branchId,
+              productId: item.productId,
+            },
+          },
+        });
+
+        const previousQty = balance?.quantity ?? new Prisma.Decimal(0);
+        const reserved = balance?.reserved ?? new Prisma.Decimal(0);
+        const currentQty = previousQty.add(item.quantity);
+        const available = currentQty.sub(reserved);
+
+        await tx.inventoryBalance.upsert({
+          where: {
+            branchId_productId: {
+              branchId: sale.branchId,
+              productId: item.productId,
+            },
+          },
+          update: { quantity: currentQty, available },
+          create: {
+            companyId,
+            branchId: sale.branchId,
+            productId: item.productId,
+            quantity: currentQty,
+            reserved,
+            available,
+          },
+        });
+
+        await tx.inventoryMovement.create({
+          data: {
+            companyId,
+            branchId: sale.branchId,
+            productId: item.productId,
+            type: 'ENTRY',
+            quantity: item.quantity,
+            previousQty,
+            currentQty,
+            referenceType: 'SALE_CANCEL',
+            referenceId: sale.id,
+            notes: `Estorno da venda ${sale.number}`,
+          },
+        });
+      }
+
+      if (financialEntry) {
+        await tx.financialEntry.update({
+          where: { id: financialEntry.id },
+          data: { status: 'CANCELLED' },
+        });
+      }
+
+      return tx.sale.update({
+        where: { id },
+        data: { status: 'CANCELLED' },
+        include: this.includeRelations(),
+      });
     });
   }
 

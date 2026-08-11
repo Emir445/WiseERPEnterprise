@@ -1,16 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Max,
-  Min,
-} from 'class-validator';
-
-import { ProductUnit } from './create-product.dto';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 enum RecordStatus {
   ACTIVE = 'ACTIVE',
@@ -19,7 +9,7 @@ enum RecordStatus {
   ARCHIVED = 'ARCHIVED',
 }
 
-export class ListProductsQueryDto {
+export class ListBranchesQueryDto {
   @ApiPropertyOptional({ default: 1 })
   @Type(() => Number)
   @IsInt()
@@ -37,16 +27,6 @@ export class ListProductsQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsUUID()
-  categoryId?: string;
-
-  @ApiPropertyOptional({ enum: ProductUnit })
-  @IsOptional()
-  @IsEnum(ProductUnit)
-  unit?: ProductUnit;
 
   @ApiPropertyOptional({ enum: RecordStatus })
   @IsOptional()

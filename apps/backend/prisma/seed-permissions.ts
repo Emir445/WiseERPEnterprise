@@ -70,6 +70,16 @@ async function main(): Promise<void> {
     'finance.settle',
     'finance.cancel',
     'dashboard.read',
+    'reports.read',
+    'inventory.transfer',
+    'product_categories.delete',
+    'product_categories.update',
+    'product_categories.read',
+    'product_categories.create',
+    'branches.delete',
+    'branches.update',
+    'branches.read',
+    'branches.create',
   ];
 
   for (const code of permissionCodes) {

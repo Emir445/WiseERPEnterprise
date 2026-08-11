@@ -85,6 +85,11 @@ enum PaymentMethod {
   OTHER
 }
 
+enum InventoryTransferStatus {
+  CONFIRMED
+  CANCELLED
+}
+
 model Company {
   id        String       @id @default(uuid()) @db.Uuid
   legalName String       @map("legal_name")
@@ -112,6 +117,8 @@ model Company {
   purchases          Purchase[]
   sales              Sale[]
   financialEntries   FinancialEntry[]
+  productCategories  ProductCategory[]
+  inventoryTransfers InventoryTransfer[]
 
   @@map("companies")
 }
@@ -137,6 +144,8 @@ model Branch {
   purchases          Purchase[]
   sales              Sale[]
   financialEntries   FinancialEntry[]
+  outgoingTransfers  InventoryTransfer[] @relation("TransferFromBranch")
+  incomingTransfers  InventoryTransfer[] @relation("TransferToBranch")
 
   @@unique([companyId, code])
   @@index([companyId, status])
@@ -327,6 +336,7 @@ model Supplier {
 model Product {
   id           String       @id @default(uuid()) @db.Uuid
   companyId    String       @map("company_id") @db.Uuid
+  categoryId   String?      @map("category_id") @db.Uuid
   name         String
   description  String?
   sku          String
@@ -340,16 +350,19 @@ model Product {
   updatedAt    DateTime     @updatedAt @map("updated_at")
   deletedAt    DateTime?    @map("deleted_at")
 
-  company            Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company            Company                 @relation(fields: [companyId], references: [id], onDelete: Restrict)
   inventoryBalances  InventoryBalance[]
   inventoryMovements InventoryMovement[]
   purchaseItems      PurchaseItem[]
   saleItems          SaleItem[]
+  category           ProductCategory?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  transferItems      InventoryTransferItem[]
 
   @@unique([companyId, sku])
   @@unique([companyId, barcode])
   @@index([companyId, name])
   @@index([companyId, status])
+  @@index([categoryId])
   @@map("products")
 }
 
@@ -520,4 +533,62 @@ model FinancialEntry {
   @@index([supplierId])
   @@index([referenceType, referenceId])
   @@map("financial_entries")
+}
+
+model ProductCategory {
+  id          String       @id @default(uuid()) @db.Uuid
+  companyId   String       @map("company_id") @db.Uuid
+  name        String
+  description String?
+  status      RecordStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  deletedAt   DateTime?    @map("deleted_at")
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  products Product[]
+
+  @@unique([companyId, name])
+  @@index([companyId, status])
+  @@map("product_categories")
+}
+
+model InventoryTransfer {
+  id           String                  @id @default(uuid()) @db.Uuid
+  companyId    String                  @map("company_id") @db.Uuid
+  fromBranchId String                  @map("from_branch_id") @db.Uuid
+  toBranchId   String                  @map("to_branch_id") @db.Uuid
+  number       String
+  status       InventoryTransferStatus @default(CONFIRMED)
+  notes        String?
+  confirmedAt  DateTime                @default(now()) @map("confirmed_at")
+  cancelledAt  DateTime?               @map("cancelled_at")
+  createdAt    DateTime                @default(now()) @map("created_at")
+  updatedAt    DateTime                @updatedAt @map("updated_at")
+
+  company    Company                 @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  fromBranch Branch                  @relation("TransferFromBranch", fields: [fromBranchId], references: [id], onDelete: Restrict)
+  toBranch   Branch                  @relation("TransferToBranch", fields: [toBranchId], references: [id], onDelete: Restrict)
+  items      InventoryTransferItem[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([fromBranchId])
+  @@index([toBranchId])
+  @@map("inventory_transfers")
+}
+
+model InventoryTransferItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  transferId String   @map("transfer_id") @db.Uuid
+  productId  String   @map("product_id") @db.Uuid
+  quantity   Decimal  @db.Decimal(15, 4)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  transfer InventoryTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  product  Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([transferId])
+  @@index([productId])
+  @@map("inventory_transfer_items")
 }

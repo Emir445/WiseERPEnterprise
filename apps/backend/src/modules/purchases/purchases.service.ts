@@ -358,23 +358,96 @@ export class PurchasesService {
   async cancel(companyId: string, id: string) {
     const purchase = await this.findOne(companyId, id);
 
-    if (purchase.status === 'CONFIRMED') {
-      throw new BadRequestException(
-        'Compra confirmada não pode ser cancelada diretamente.',
-      );
-    }
-
     if (purchase.status === 'CANCELLED') {
       return purchase;
     }
 
-    return this.prisma.purchase.update({
+    if (purchase.status === 'DRAFT') {
+      return this.prisma.purchase.update({
+        where: { id },
+        data: { status: 'CANCELLED' },
+        include: {
+          supplier: true,
+          branch: true,
+          items: { include: { product: true } },
+        },
+      });
+    }
+
+    const financialEntry = await this.prisma.financialEntry.findFirst({
       where: {
-        id,
+        companyId,
+        referenceType: 'PURCHASE',
+        referenceId: purchase.id,
+        type: 'PAYABLE',
+        deletedAt: null,
       },
-      data: {
-        status: 'CANCELLED',
-      },
+    });
+
+    if (financialEntry?.paidAmount.greaterThan(0)) {
+      throw new BadRequestException(
+        'Compra com pagamento financeiro não pode ser cancelada diretamente.',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      for (const item of purchase.items) {
+        const balance = await tx.inventoryBalance.findUnique({
+          where: {
+            branchId_productId: {
+              branchId: purchase.branchId,
+              productId: item.productId,
+            },
+          },
+        });
+
+        if (!balance || balance.available.lessThan(item.quantity)) {
+          throw new BadRequestException(
+            `Não é possível cancelar: estoque da compra já foi consumido para o produto ${item.product.name}.`,
+          );
+        }
+
+        const previousQty = balance.quantity;
+        const currentQty = previousQty.sub(item.quantity);
+        const available = balance.available.sub(item.quantity);
+
+        await tx.inventoryBalance.update({
+          where: { id: balance.id },
+          data: { quantity: currentQty, available },
+        });
+
+        await tx.inventoryMovement.create({
+          data: {
+            companyId,
+            branchId: purchase.branchId,
+            productId: item.productId,
+            type: 'EXIT',
+            quantity: item.quantity,
+            previousQty,
+            currentQty,
+            referenceType: 'PURCHASE_CANCEL',
+            referenceId: purchase.id,
+            notes: `Estorno da compra ${purchase.number}`,
+          },
+        });
+      }
+
+      if (financialEntry) {
+        await tx.financialEntry.update({
+          where: { id: financialEntry.id },
+          data: { status: 'CANCELLED' },
+        });
+      }
+
+      return tx.purchase.update({
+        where: { id },
+        data: { status: 'CANCELLED' },
+        include: {
+          supplier: true,
+          branch: true,
+          items: { include: { product: true } },
+        },
+      });
     });
   }
 

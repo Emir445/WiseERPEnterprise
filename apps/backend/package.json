@@ -18,7 +18,9 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "setup:batch": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-batch.ps1",
-    "smoke:sales-finance": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-sales-finance.ps1"
+    "smoke:sales-finance": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-sales-finance.ps1",
+    "setup:operations-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-operations-batch.ps1",
+    "smoke:operations-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-operations-v2.ps1"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
