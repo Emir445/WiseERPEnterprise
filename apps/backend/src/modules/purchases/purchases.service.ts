@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   ConflictException,
   Injectable,
@@ -319,6 +319,21 @@ export class PurchasesService {
           },
         });
       }
+
+      await tx.financialEntry.create({
+        data: {
+          companyId,
+          branchId: purchase.branchId,
+          supplierId: purchase.supplierId,
+          type: 'PAYABLE',
+          status: 'OPEN',
+          description: `Compra ${purchase.number}`,
+          amount: purchase.totalAmount,
+          dueDate: new Date(),
+          referenceType: 'PURCHASE',
+          referenceId: purchase.id,
+        },
+      });
 
       return tx.purchase.update({
         where: {

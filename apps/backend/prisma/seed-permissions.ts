@@ -1,4 +1,4 @@
-﻿import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -61,6 +61,15 @@ async function main(): Promise<void> {
     'purchases.update',
     'purchases.confirm',
     'purchases.cancel',
+    'sales.create',
+    'sales.read',
+    'sales.update',
+    'sales.confirm',
+    'sales.cancel',
+    'finance.read',
+    'finance.settle',
+    'finance.cancel',
+    'dashboard.read',
   ];
 
   for (const code of permissionCodes) {
