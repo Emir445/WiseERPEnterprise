@@ -52,6 +52,7 @@ model Company {
   auditLogs   AuditLog[]
   customers   Customer[]
   suppliers   Supplier[]
+  products    Product[]
 
   @@map("companies")
 }
@@ -253,4 +254,42 @@ model Supplier {
   @@index([companyId, name])
   @@index([companyId, status])
   @@map("suppliers")
+}
+
+enum ProductUnit {
+  UN
+  KG
+  G
+  L
+  ML
+  CX
+  PC
+  M
+  M2
+  M3
+}
+
+model Product {
+  id           String       @id @default(uuid()) @db.Uuid
+  companyId    String       @map("company_id") @db.Uuid
+  name         String
+  description  String?
+  sku          String
+  barcode      String?
+  unit         ProductUnit  @default(UN)
+  costPrice    Decimal      @default(0) @map("cost_price") @db.Decimal(15, 4)
+  salePrice    Decimal      @default(0) @map("sale_price") @db.Decimal(15, 4)
+  minimumStock Decimal      @default(0) @map("minimum_stock") @db.Decimal(15, 4)
+  status       RecordStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  deletedAt    DateTime?    @map("deleted_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  @@unique([companyId, sku])
+  @@unique([companyId, barcode])
+  @@index([companyId, name])
+  @@index([companyId, status])
+  @@map("products")
 }
