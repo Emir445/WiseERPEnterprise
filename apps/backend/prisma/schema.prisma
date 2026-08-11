@@ -44,15 +44,17 @@ model Company {
   updatedAt DateTime     @updatedAt @map("updated_at")
   deletedAt DateTime?    @map("deleted_at")
 
-  branches    Branch[]
-  users       User[]
-  roles       Role[]
-  permissions Permission[]
-  sessions    Session[]
-  auditLogs   AuditLog[]
-  customers   Customer[]
-  suppliers   Supplier[]
-  products    Product[]
+  branches           Branch[]
+  users              User[]
+  roles              Role[]
+  permissions        Permission[]
+  sessions           Session[]
+  auditLogs          AuditLog[]
+  customers          Customer[]
+  suppliers          Supplier[]
+  products           Product[]
+  inventoryBalances  InventoryBalance[]
+  inventoryMovements InventoryMovement[]
 
   @@map("companies")
 }
@@ -70,9 +72,11 @@ model Branch {
   updatedAt DateTime     @updatedAt @map("updated_at")
   deletedAt DateTime?    @map("deleted_at")
 
-  company   Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  users     User[]
-  auditLogs AuditLog[]
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  inventoryBalances  InventoryBalance[]
+  inventoryMovements InventoryMovement[]
+  users              User[]
+  auditLogs          AuditLog[]
 
   @@unique([companyId, code])
   @@index([companyId, status])
@@ -92,11 +96,13 @@ model User {
   updatedAt    DateTime   @updatedAt @map("updated_at")
   deletedAt    DateTime?  @map("deleted_at")
 
-  company   Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  branch    Branch?    @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  userRoles UserRole[]
-  sessions  Session[]
-  auditLogs AuditLog[] @relation("AuditActor")
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  inventoryBalances  InventoryBalance[]
+  inventoryMovements InventoryMovement[]
+  branch             Branch?             @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  userRoles          UserRole[]
+  sessions           Session[]
+  auditLogs          AuditLog[]          @relation("AuditActor")
 
   @@unique([companyId, email])
   @@index([companyId, status])
@@ -193,9 +199,11 @@ model AuditLog {
   userAgent   String?  @map("user_agent")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  branch  Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  actor   User?   @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  inventoryBalances  InventoryBalance[]
+  inventoryMovements InventoryMovement[]
+  branch             Branch?             @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  actor              User?               @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
 
   @@index([companyId, entity, entityId])
   @@index([actorUserId, createdAt])
@@ -221,7 +229,9 @@ model Customer {
   updatedAt             DateTime     @updatedAt @map("updated_at")
   deletedAt             DateTime?    @map("deleted_at")
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  inventoryBalances  InventoryBalance[]
+  inventoryMovements InventoryMovement[]
 
   @@unique([companyId, document])
   @@index([companyId, name])
@@ -248,7 +258,9 @@ model Supplier {
   updatedAt             DateTime     @updatedAt @map("updated_at")
   deletedAt             DateTime?    @map("deleted_at")
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  inventoryBalances  InventoryBalance[]
+  inventoryMovements InventoryMovement[]
 
   @@unique([companyId, document])
   @@index([companyId, name])
@@ -285,11 +297,82 @@ model Product {
   updatedAt    DateTime     @updatedAt @map("updated_at")
   deletedAt    DateTime?    @map("deleted_at")
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  inventoryBalances  InventoryBalance[]
+  inventoryMovements InventoryMovement[]
 
   @@unique([companyId, sku])
   @@unique([companyId, barcode])
   @@index([companyId, name])
   @@index([companyId, status])
   @@map("products")
+}
+
+enum InventoryMovementType {
+  ENTRY
+  EXIT
+  ADJUSTMENT
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+model InventoryBalance {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  branchId  String   @map("branch_id") @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  quantity  Decimal  @default(0) @db.Decimal(15, 4)
+  reserved  Decimal  @default(0) @db.Decimal(15, 4)
+  available Decimal  @default(0) @db.Decimal(15, 4)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  branch     Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  user       User?     @relation(fields: [userId], references: [id])
+  userId     String?   @db.Uuid
+  auditLog   AuditLog? @relation(fields: [auditLogId], references: [id])
+  auditLogId String?   @db.Uuid
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?   @db.Uuid
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+  supplierId String?   @db.Uuid
+
+  @@unique([branchId, productId])
+  @@index([companyId, productId])
+  @@index([companyId, branchId])
+  @@map("inventory_balances")
+}
+
+model InventoryMovement {
+  id            String                @id @default(uuid()) @db.Uuid
+  companyId     String                @map("company_id") @db.Uuid
+  branchId      String                @map("branch_id") @db.Uuid
+  productId     String                @map("product_id") @db.Uuid
+  type          InventoryMovementType
+  quantity      Decimal               @db.Decimal(15, 4)
+  previousQty   Decimal               @map("previous_qty") @db.Decimal(15, 4)
+  currentQty    Decimal               @map("current_qty") @db.Decimal(15, 4)
+  referenceType String?               @map("reference_type")
+  referenceId   String?               @map("reference_id")
+  notes         String?
+  createdAt     DateTime              @default(now()) @map("created_at")
+
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  branch     Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  user       User?     @relation(fields: [userId], references: [id])
+  userId     String?   @db.Uuid
+  auditLog   AuditLog? @relation(fields: [auditLogId], references: [id])
+  auditLogId String?   @db.Uuid
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?   @db.Uuid
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+  supplierId String?   @db.Uuid
+
+  @@index([companyId, branchId, productId])
+  @@index([referenceType, referenceId])
+  @@index([createdAt])
+  @@map("inventory_movements")
 }
