@@ -8,6 +8,7 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { PurchasesModule } from './modules/purchases/purchases.module';
 import { ProductsModule } from './modules/products/products.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { UsersModule } from './modules/users/users.module';
@@ -28,9 +29,11 @@ import { UsersModule } from './modules/users/users.module';
     SuppliersModule,
     ProductsModule,
     InventoryModule,
+    PurchasesModule,
   ],
 })
 export class AppModule {}
+
 
 
 

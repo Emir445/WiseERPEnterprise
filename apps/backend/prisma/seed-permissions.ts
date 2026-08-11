@@ -56,6 +56,11 @@ async function main(): Promise<void> {
     'inventory.entry',
     'inventory.exit',
     'inventory.adjustment',
+    'purchases.create',
+    'purchases.read',
+    'purchases.update',
+    'purchases.confirm',
+    'purchases.cancel',
   ];
 
   for (const code of permissionCodes) {
@@ -104,6 +109,7 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
 
 
 
