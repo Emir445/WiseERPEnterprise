@@ -45,6 +45,11 @@ export class CreateSaleDto {
   @IsUUID()
   customerId!: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  paymentTermId?: string;
+
   @ApiProperty({ example: 'VEN-000001' })
   @IsString()
   number!: string;

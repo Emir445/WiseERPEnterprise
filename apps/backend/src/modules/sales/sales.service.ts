@@ -29,6 +29,7 @@ export class SalesService {
       dto.branchId,
       dto.customerId,
       dto.items.map((item) => item.productId),
+      dto.paymentTermId,
     );
 
     const items = this.buildItems(dto.items);
@@ -42,6 +43,7 @@ export class SalesService {
         companyId,
         branchId: dto.branchId,
         customerId: dto.customerId,
+        paymentTermId: dto.paymentTermId,
         number: dto.number,
         notes: dto.notes,
         totalAmount,
@@ -133,6 +135,7 @@ export class SalesService {
 
     const branchId = dto.branchId ?? sale.branchId;
     const customerId = dto.customerId ?? sale.customerId;
+    const paymentTermId = dto.paymentTermId ?? sale.paymentTermId ?? undefined;
     const nextItems =
       dto.items ??
       sale.items.map((item) => ({
@@ -147,6 +150,7 @@ export class SalesService {
       branchId,
       customerId,
       nextItems.map((item) => item.productId),
+      paymentTermId,
     );
 
     const items = this.buildItems(nextItems);
@@ -162,6 +166,7 @@ export class SalesService {
         data: {
           branchId,
           customerId,
+          paymentTermId,
           number: dto.number ?? sale.number,
           notes: dto.notes !== undefined ? dto.notes : sale.notes,
           totalAmount,
@@ -227,20 +232,40 @@ export class SalesService {
         });
       }
 
-      await tx.financialEntry.create({
-        data: {
-          companyId,
-          branchId: sale.branchId,
-          customerId: sale.customerId,
-          type: 'RECEIVABLE',
-          status: 'OPEN',
-          description: `Venda ${sale.number}`,
-          amount: sale.totalAmount,
-          dueDate: new Date(),
-          referenceType: 'SALE',
-          referenceId: sale.id,
-        },
-      });
+      const paymentTerm = sale.paymentTermId
+        ? await tx.paymentTerm.findFirst({
+            where: { id: sale.paymentTermId, companyId, deletedAt: null },
+          })
+        : null;
+      const count = paymentTerm?.installments ?? 1;
+      const base = sale.totalAmount.div(count).toDecimalPlaces(2);
+      let allocated = new Prisma.Decimal(0);
+      for (let installmentNumber = 1; installmentNumber <= count; installmentNumber++) {
+        const amount = installmentNumber === count
+          ? sale.totalAmount.sub(allocated)
+          : base;
+        allocated = allocated.add(amount);
+        const dueDate = new Date();
+        const days = (paymentTerm?.firstDueDays ?? 0) +
+          (installmentNumber - 1) * (paymentTerm?.intervalDays ?? 30);
+        dueDate.setDate(dueDate.getDate() + days);
+        await tx.financialEntry.create({
+          data: {
+            companyId,
+            branchId: sale.branchId,
+            customerId: sale.customerId,
+            type: 'RECEIVABLE',
+            status: 'OPEN',
+            description: `Venda ${sale.number} - parcela ${installmentNumber}/${count}`,
+            amount,
+            dueDate,
+            referenceType: 'SALE',
+            referenceId: sale.id,
+            installmentNumber,
+            installmentCount: count,
+          },
+        });
+      }
 
       return tx.sale.update({
         where: { id },
@@ -265,7 +290,7 @@ export class SalesService {
       });
     }
 
-    const financialEntry = await this.prisma.financialEntry.findFirst({
+    const financialEntries = await this.prisma.financialEntry.findMany({
       where: {
         companyId,
         referenceType: 'SALE',
@@ -275,7 +300,7 @@ export class SalesService {
       },
     });
 
-    if (financialEntry?.paidAmount.greaterThan(0)) {
+    if (financialEntries.some((entry) => entry.paidAmount.greaterThan(0))) {
       throw new BadRequestException(
         'Venda com recebimento financeiro não pode ser cancelada diretamente.',
       );
@@ -331,9 +356,9 @@ export class SalesService {
         });
       }
 
-      if (financialEntry) {
-        await tx.financialEntry.update({
-          where: { id: financialEntry.id },
+      if (financialEntries.length) {
+        await tx.financialEntry.updateMany({
+          where: { id: { in: financialEntries.map((entry) => entry.id) } },
           data: { status: 'CANCELLED' },
         });
       }
@@ -381,6 +406,9 @@ export class SalesService {
       customer: true,
       branch: true,
       items: { include: { product: true } },
+      paymentTerm: true,
+      salesOrder: true,
+      fiscalDocument: true,
     } as const;
   }
 
@@ -389,8 +417,9 @@ export class SalesService {
     branchId: string,
     customerId: string,
     productIds: string[],
+    paymentTermId?: string,
   ) {
-    const [branch, customer, products] = await Promise.all([
+    const [branch, customer, products, paymentTerm] = await Promise.all([
       this.prisma.branch.findFirst({
         where: { id: branchId, companyId, deletedAt: null },
       }),
@@ -410,10 +439,16 @@ export class SalesService {
           status: 'ACTIVE',
         },
       }),
+      paymentTermId
+        ? this.prisma.paymentTerm.findFirst({
+            where: { id: paymentTermId, companyId, deletedAt: null, status: 'ACTIVE' },
+          })
+        : Promise.resolve(true),
     ]);
 
     if (!branch) throw new NotFoundException('Filial não encontrada.');
     if (!customer) throw new NotFoundException('Cliente não encontrado.');
+    if (!paymentTerm) throw new NotFoundException('Condição de pagamento não encontrada.');
     if (products.length !== new Set(productIds).size) {
       throw new NotFoundException(
         'Um ou mais produtos não foram encontrados.',

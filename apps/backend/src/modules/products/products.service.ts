@@ -54,6 +54,9 @@ export class ProductsService {
         description: dto.description,
         sku: dto.sku,
         barcode: dto.barcode,
+        ncm: dto.ncm,
+        cest: dto.cest,
+        fiscalOrigin: dto.fiscalOrigin,
         unit: dto.unit,
         costPrice: dto.costPrice ?? 0,
         salePrice: dto.salePrice ?? 0,
@@ -200,6 +203,9 @@ export class ProductsService {
         ...(dto.barcode !== undefined
           ? { barcode: dto.barcode }
           : {}),
+        ...(dto.ncm !== undefined ? { ncm: dto.ncm } : {}),
+        ...(dto.cest !== undefined ? { cest: dto.cest } : {}),
+        ...(dto.fiscalOrigin !== undefined ? { fiscalOrigin: dto.fiscalOrigin } : {}),
         ...(dto.unit !== undefined ? { unit: dto.unit } : {}),
         ...(dto.costPrice !== undefined
           ? { costPrice: dto.costPrice }

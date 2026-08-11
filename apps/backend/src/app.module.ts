@@ -8,14 +8,18 @@ import { HealthModule } from './health/health.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { FinanceModule } from './modules/finance/finance.module';
+import { FiscalModule } from './modules/fiscal/fiscal.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
+import { PaymentTermsModule } from './modules/payment-terms/payment-terms.module';
 import { ProductCategoriesModule } from './modules/product-categories/product-categories.module';
 import { ProductsModule } from './modules/products/products.module';
 import { PurchasesModule } from './modules/purchases/purchases.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { QuotesModule } from './modules/quotes/quotes.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { SalesModule } from './modules/sales/sales.module';
+import { SalesOrdersModule } from './modules/sales-orders/sales-orders.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -32,6 +36,7 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     RolesModule,
     PermissionsModule,
+    PaymentTermsModule,
     CustomersModule,
     DashboardModule,
     SuppliersModule,
@@ -39,8 +44,11 @@ import { UsersModule } from './modules/users/users.module';
     ProductsModule,
     InventoryModule,
     PurchasesModule,
+    QuotesModule,
+    SalesOrdersModule,
     SalesModule,
     FinanceModule,
+    FiscalModule,
     ReportsModule,
   ],
 })

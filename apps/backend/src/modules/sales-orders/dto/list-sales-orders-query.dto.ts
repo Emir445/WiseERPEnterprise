@@ -1,0 +1,2 @@
+import { SalesOrderStatus } from '@prisma/client'; import { Type } from 'class-transformer'; import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+export class ListSalesOrdersQueryDto { @IsOptional() @IsEnum(SalesOrderStatus) status?:SalesOrderStatus; @IsOptional() @IsString() search?:string; @Type(()=>Number) @IsInt() @Min(1) page=1; @Type(()=>Number) @IsInt() @Min(1) @Max(100) limit=20; }

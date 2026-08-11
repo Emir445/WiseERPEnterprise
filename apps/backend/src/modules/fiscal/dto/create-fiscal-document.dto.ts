@@ -1,0 +1,2 @@
+import { FiscalDocumentType } from '@prisma/client'; import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'; import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+export class CreateFiscalDocumentDto { @ApiProperty() @IsUUID() saleId!:string; @ApiProperty({enum:FiscalDocumentType}) @IsEnum(FiscalDocumentType) type!:FiscalDocumentType; @ApiProperty() @IsString() number!:string; @ApiPropertyOptional({default:'1'}) @IsOptional() @IsString() series?:string; @ApiPropertyOptional() @IsOptional() @IsString() notes?:string; }
