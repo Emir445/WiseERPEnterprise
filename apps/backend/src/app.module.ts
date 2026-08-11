@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from './core/auth/auth.module';
+import { ChartAccountsModule } from './modules/chart-accounts/chart-accounts.module';
+import { CostCentersModule } from './modules/cost-centers/cost-centers.module';
 import { BranchesModule } from './modules/branches/branches.module';
 import { DatabaseModule } from './core/database/database.module';
 import { HealthModule } from './health/health.module';
@@ -21,6 +23,7 @@ import { RolesModule } from './modules/roles/roles.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { SalesOrdersModule } from './modules/sales-orders/sales-orders.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
+import { TreasuryModule } from './modules/treasury/treasury.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -48,6 +51,9 @@ import { UsersModule } from './modules/users/users.module';
     SalesOrdersModule,
     SalesModule,
     FinanceModule,
+    ChartAccountsModule,
+    CostCentersModule,
+    TreasuryModule,
     FiscalModule,
     ReportsModule,
   ],

@@ -85,6 +85,32 @@ enum PaymentMethod {
   OTHER
 }
 
+enum TreasuryAccountType {
+  BANK
+  CASH
+}
+
+enum TreasuryMovementType {
+  CREDIT
+  DEBIT
+  TRANSFER_IN
+  TRANSFER_OUT
+  ADJUSTMENT
+}
+
+enum ChartAccountNature {
+  REVENUE
+  EXPENSE
+  ASSET
+  LIABILITY
+  EQUITY
+}
+
+enum CashSessionStatus {
+  OPEN
+  CLOSED
+}
+
 enum InventoryTransferStatus {
   CONFIRMED
   CANCELLED
@@ -132,26 +158,33 @@ model Company {
   updatedAt DateTime     @updatedAt @map("updated_at")
   deletedAt DateTime?    @map("deleted_at")
 
-  branches           Branch[]
-  users              User[]
-  roles              Role[]
-  permissions        Permission[]
-  sessions           Session[]
-  auditLogs          AuditLog[]
-  customers          Customer[]
-  suppliers          Supplier[]
-  products           Product[]
-  inventoryBalances  InventoryBalance[]
-  inventoryMovements InventoryMovement[]
-  purchases          Purchase[]
-  sales              Sale[]
-  financialEntries   FinancialEntry[]
-  productCategories  ProductCategory[]
-  inventoryTransfers InventoryTransfer[]
-  paymentTerms       PaymentTerm[]
-  quotes             Quote[]
-  salesOrders        SalesOrder[]
-  fiscalDocuments    FiscalDocument[]
+  branches             Branch[]
+  users                User[]
+  roles                Role[]
+  permissions          Permission[]
+  sessions             Session[]
+  auditLogs            AuditLog[]
+  customers            Customer[]
+  suppliers            Supplier[]
+  products             Product[]
+  inventoryBalances    InventoryBalance[]
+  inventoryMovements   InventoryMovement[]
+  purchases            Purchase[]
+  sales                Sale[]
+  financialEntries     FinancialEntry[]
+  productCategories    ProductCategory[]
+  inventoryTransfers   InventoryTransfer[]
+  paymentTerms         PaymentTerm[]
+  quotes               Quote[]
+  salesOrders          SalesOrder[]
+  fiscalDocuments      FiscalDocument[]
+  chartAccounts        ChartAccount[]
+  costCenters          CostCenter[]
+  treasuryAccounts     TreasuryAccount[]
+  treasuryMovements    TreasuryMovement[]
+  treasuryTransfers    TreasuryTransfer[]
+  financialSettlements FinancialSettlement[]
+  cashSessions         CashSession[]
 
   @@map("companies")
 }
@@ -182,6 +215,9 @@ model Branch {
   quotes             Quote[]
   salesOrders        SalesOrder[]
   fiscalDocuments    FiscalDocument[]
+  treasuryAccounts   TreasuryAccount[]
+  treasuryMovements  TreasuryMovement[]
+  cashSessions       CashSession[]
 
   @@unique([companyId, code])
   @@index([companyId, status])
@@ -566,6 +602,8 @@ model FinancialEntry {
   installmentCount  Int                  @default(1) @map("installment_count")
   customerId        String?              @map("customer_id") @db.Uuid
   supplierId        String?              @map("supplier_id") @db.Uuid
+  chartAccountId    String?              @map("chart_account_id") @db.Uuid
+  costCenterId      String?              @map("cost_center_id") @db.Uuid
   referenceType     String?              @map("reference_type")
   referenceId       String?              @map("reference_id")
   notes             String?
@@ -573,16 +611,21 @@ model FinancialEntry {
   updatedAt         DateTime             @updatedAt @map("updated_at")
   deletedAt         DateTime?            @map("deleted_at")
 
-  company  Company   @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  branch   Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  company      Company               @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  branch       Branch                @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  customer     Customer?             @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  supplier     Supplier?             @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  chartAccount ChartAccount?         @relation(fields: [chartAccountId], references: [id], onDelete: SetNull)
+  costCenter   CostCenter?           @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  settlements  FinancialSettlement[]
 
   @@unique([companyId, referenceType, referenceId, type, installmentNumber])
   @@index([companyId, type, status])
   @@index([companyId, dueDate])
   @@index([customerId])
   @@index([supplierId])
+  @@index([chartAccountId])
+  @@index([costCenterId])
   @@index([referenceType, referenceId])
   @@map("financial_entries")
 }
@@ -817,4 +860,185 @@ model FiscalDocumentItem {
   @@index([fiscalDocumentId])
   @@index([productId])
   @@map("fiscal_document_items")
+}
+
+model ChartAccount {
+  id        String             @id @default(uuid()) @db.Uuid
+  companyId String             @map("company_id") @db.Uuid
+  code      String
+  name      String
+  nature    ChartAccountNature
+  status    RecordStatus       @default(ACTIVE)
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+  deletedAt DateTime?          @map("deleted_at")
+
+  company          Company               @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  financialEntries FinancialEntry[]
+  settlements      FinancialSettlement[]
+  movements        TreasuryMovement[]
+
+  @@unique([companyId, code])
+  @@index([companyId, status])
+  @@map("chart_accounts")
+}
+
+model CostCenter {
+  id        String       @id @default(uuid()) @db.Uuid
+  companyId String       @map("company_id") @db.Uuid
+  code      String
+  name      String
+  status    RecordStatus @default(ACTIVE)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  deletedAt DateTime?    @map("deleted_at")
+
+  company          Company               @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  financialEntries FinancialEntry[]
+  settlements      FinancialSettlement[]
+  movements        TreasuryMovement[]
+
+  @@unique([companyId, code])
+  @@index([companyId, status])
+  @@map("cost_centers")
+}
+
+model TreasuryAccount {
+  id             String              @id @default(uuid()) @db.Uuid
+  companyId      String              @map("company_id") @db.Uuid
+  branchId       String?             @map("branch_id") @db.Uuid
+  name           String
+  type           TreasuryAccountType
+  bankName       String?             @map("bank_name")
+  agency         String?
+  accountNumber  String?             @map("account_number")
+  currentBalance Decimal             @default(0) @map("current_balance") @db.Decimal(15, 4)
+  allowNegative  Boolean             @default(false) @map("allow_negative")
+  status         RecordStatus        @default(ACTIVE)
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  deletedAt      DateTime?           @map("deleted_at")
+
+  company           Company               @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  branch            Branch?               @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  movements         TreasuryMovement[]
+  settlements       FinancialSettlement[]
+  cashSessions      CashSession[]
+  outgoingTransfers TreasuryTransfer[]    @relation("TreasuryTransferFrom")
+  incomingTransfers TreasuryTransfer[]    @relation("TreasuryTransferTo")
+
+  @@unique([companyId, name])
+  @@index([companyId, type, status])
+  @@index([branchId])
+  @@map("treasury_accounts")
+}
+
+model FinancialSettlement {
+  id                String        @id @default(uuid()) @db.Uuid
+  companyId         String        @map("company_id") @db.Uuid
+  financialEntryId  String        @map("financial_entry_id") @db.Uuid
+  treasuryAccountId String?       @map("treasury_account_id") @db.Uuid
+  chartAccountId    String?       @map("chart_account_id") @db.Uuid
+  costCenterId      String?       @map("cost_center_id") @db.Uuid
+  amount            Decimal       @db.Decimal(15, 4)
+  paymentMethod     PaymentMethod @map("payment_method")
+  settledAt         DateTime      @default(now()) @map("settled_at")
+  notes             String?
+  createdAt         DateTime      @default(now()) @map("created_at")
+
+  company         Company           @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  financialEntry  FinancialEntry    @relation(fields: [financialEntryId], references: [id], onDelete: Restrict)
+  treasuryAccount TreasuryAccount?  @relation(fields: [treasuryAccountId], references: [id], onDelete: SetNull)
+  chartAccount    ChartAccount?     @relation(fields: [chartAccountId], references: [id], onDelete: SetNull)
+  costCenter      CostCenter?       @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  movement        TreasuryMovement?
+
+  @@index([companyId, settledAt])
+  @@index([financialEntryId])
+  @@index([treasuryAccountId])
+  @@map("financial_settlements")
+}
+
+model TreasuryTransfer {
+  id            String   @id @default(uuid()) @db.Uuid
+  companyId     String   @map("company_id") @db.Uuid
+  fromAccountId String   @map("from_account_id") @db.Uuid
+  toAccountId   String   @map("to_account_id") @db.Uuid
+  amount        Decimal  @db.Decimal(15, 4)
+  occurredAt    DateTime @default(now()) @map("occurred_at")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  company     Company            @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  fromAccount TreasuryAccount    @relation("TreasuryTransferFrom", fields: [fromAccountId], references: [id], onDelete: Restrict)
+  toAccount   TreasuryAccount    @relation("TreasuryTransferTo", fields: [toAccountId], references: [id], onDelete: Restrict)
+  movements   TreasuryMovement[]
+
+  @@index([companyId, occurredAt])
+  @@index([fromAccountId])
+  @@index([toAccountId])
+  @@map("treasury_transfers")
+}
+
+model TreasuryMovement {
+  id                      String               @id @default(uuid()) @db.Uuid
+  companyId               String               @map("company_id") @db.Uuid
+  branchId                String?              @map("branch_id") @db.Uuid
+  treasuryAccountId       String               @map("treasury_account_id") @db.Uuid
+  financialSettlementId   String?              @unique @map("financial_settlement_id") @db.Uuid
+  treasuryTransferId      String?              @map("treasury_transfer_id") @db.Uuid
+  chartAccountId          String?              @map("chart_account_id") @db.Uuid
+  costCenterId            String?              @map("cost_center_id") @db.Uuid
+  type                    TreasuryMovementType
+  amount                  Decimal              @db.Decimal(15, 4)
+  balanceBefore           Decimal              @map("balance_before") @db.Decimal(15, 4)
+  balanceAfter            Decimal              @map("balance_after") @db.Decimal(15, 4)
+  paymentMethod           PaymentMethod?       @map("payment_method")
+  description             String
+  referenceType           String?              @map("reference_type")
+  referenceId             String?              @map("reference_id")
+  occurredAt              DateTime             @default(now()) @map("occurred_at")
+  reconciledAt            DateTime?            @map("reconciled_at")
+  reconciliationReference String?              @map("reconciliation_reference")
+  createdAt               DateTime             @default(now()) @map("created_at")
+
+  company             Company              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  branch              Branch?              @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  treasuryAccount     TreasuryAccount      @relation(fields: [treasuryAccountId], references: [id], onDelete: Restrict)
+  financialSettlement FinancialSettlement? @relation(fields: [financialSettlementId], references: [id], onDelete: SetNull)
+  treasuryTransfer    TreasuryTransfer?    @relation(fields: [treasuryTransferId], references: [id], onDelete: SetNull)
+  chartAccount        ChartAccount?        @relation(fields: [chartAccountId], references: [id], onDelete: SetNull)
+  costCenter          CostCenter?          @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, occurredAt])
+  @@index([treasuryAccountId, occurredAt])
+  @@index([referenceType, referenceId])
+  @@index([reconciledAt])
+  @@map("treasury_movements")
+}
+
+model CashSession {
+  id                    String            @id @default(uuid()) @db.Uuid
+  companyId             String            @map("company_id") @db.Uuid
+  branchId              String            @map("branch_id") @db.Uuid
+  treasuryAccountId     String            @map("treasury_account_id") @db.Uuid
+  status                CashSessionStatus @default(OPEN)
+  openingAmount         Decimal           @map("opening_amount") @db.Decimal(15, 4)
+  expectedClosingAmount Decimal?          @map("expected_closing_amount") @db.Decimal(15, 4)
+  actualClosingAmount   Decimal?          @map("actual_closing_amount") @db.Decimal(15, 4)
+  difference            Decimal?          @db.Decimal(15, 4)
+  openedByUserId        String?           @map("opened_by_user_id") @db.Uuid
+  closedByUserId        String?           @map("closed_by_user_id") @db.Uuid
+  openedAt              DateTime          @default(now()) @map("opened_at")
+  closedAt              DateTime?         @map("closed_at")
+  notes                 String?
+  createdAt             DateTime          @default(now()) @map("created_at")
+
+  company         Company         @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  branch          Branch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  treasuryAccount TreasuryAccount @relation(fields: [treasuryAccountId], references: [id], onDelete: Restrict)
+
+  @@index([companyId, status])
+  @@index([treasuryAccountId, status])
+  @@map("cash_sessions")
 }

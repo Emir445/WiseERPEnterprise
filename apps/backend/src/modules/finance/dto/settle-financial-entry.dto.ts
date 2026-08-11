@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMethod } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 export class SettleFinancialEntryDto {
   @ApiProperty({ example: 100 })
@@ -13,6 +13,14 @@ export class SettleFinancialEntryDto {
   @ApiProperty({ enum: PaymentMethod, example: PaymentMethod.PIX })
   @IsEnum(PaymentMethod)
   paymentMethod!: PaymentMethod;
+
+  @ApiPropertyOptional({ description: 'Conta bancária/caixa usada na baixa. Opcional para compatibilidade com integrações antigas.' })
+  @IsOptional()
+  @IsUUID()
+  treasuryAccountId?: string;
+
+  @ApiPropertyOptional() @IsOptional() @IsUUID() chartAccountId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUUID() costCenterId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
