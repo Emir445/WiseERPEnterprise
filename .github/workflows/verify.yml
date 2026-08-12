@@ -1,0 +1,52 @@
+﻿name: Project Verification
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node Backend
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/backend/package-lock.json
+
+      - name: Backend install
+        working-directory: apps/backend
+        run: npm ci
+
+      - name: Prisma validate
+        working-directory: apps/backend
+        env:
+          DATABASE_URL: postgresql://ci_user:ci_password@localhost:5432/wiseone_ci
+        run: npx prisma validate
+
+      - name: Backend build
+        working-directory: apps/backend
+        run: npm run build
+
+      - name: Setup Node Frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      - name: Frontend install
+        working-directory: apps/frontend
+        run: npm ci
+
+      - name: Frontend build
+        working-directory: apps/frontend
+        run: npm run build
+
+      - name: Docker validation
+        run: docker compose -f docker-compose.staging.yml config --quiet
