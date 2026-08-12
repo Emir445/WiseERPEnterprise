@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "smoke": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-frontend-admin-v1.ps1"
+    "smoke": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-frontend-admin-v1.ps1",
+    "finalize:v2": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-frontend-admin-v2.ps1",
+    "smoke:v2": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-frontend-admin-v2.ps1"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",
