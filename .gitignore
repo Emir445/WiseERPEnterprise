@@ -32,3 +32,6 @@ Thumbs.db
 
 # Staging secrets
 .env.staging
+
+# TypeScript build cache
+*.tsbuildinfo
