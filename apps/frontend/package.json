@@ -11,7 +11,9 @@
     "finalize:v2": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-frontend-admin-v2.ps1",
     "smoke:v2": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-frontend-admin-v2.ps1",
     "finalize:v3": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-frontend-ux-v3.ps1",
-    "smoke:v3": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-frontend-ux-v3.ps1"
+    "smoke:v3": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-frontend-ux-v3.ps1",
+    "finalize:v4": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-frontend-ux-v4.ps1",
+    "smoke:v4": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-frontend-ux-v4.ps1"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",
