@@ -1,0 +1,59 @@
+name: Staging
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/cicd-v1]
+
+concurrency:
+  group: wise-one-staging
+  cancel-in-progress: false
+
+jobs:
+  validate-compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create ephemeral validation env
+        run: |
+          cat > .env.staging <<'ENV'
+          POSTGRES_DB=wiseone_staging
+          POSTGRES_USER=wise_staging
+          POSTGRES_PASSWORD=ci_only_not_for_deploy
+          JWT_ACCESS_SECRET=ci_access_secret_0123456789012345678901234567890123456789
+          JWT_REFRESH_SECRET=ci_refresh_secret_0123456789012345678901234567890123456789
+          JWT_ACCESS_EXPIRES_IN=15m
+          JWT_REFRESH_EXPIRES_IN=7d
+          MINIO_ROOT_USER=wise_staging
+          MINIO_ROOT_PASSWORD=ci_minio_password_only
+          STAGING_HTTP_PORT=8080
+          CORS_ORIGINS=http://localhost:8080
+          SWAGGER_ENABLED=true
+          ENV
+      - run: docker compose --env-file .env.staging -f docker-compose.staging.yml config --quiet
+      - run: rm -f .env.staging
+
+  deploy:
+    if: ${{ vars.STAGING_DEPLOY_ENABLED == 'true' }}
+    needs: validate-compose
+    runs-on: [self-hosted, staging]
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write staging env from GitHub secrets
+        shell: bash
+        env:
+          STAGING_ENV_FILE: ${{ secrets.STAGING_ENV_FILE }}
+        run: |
+          test -n "$STAGING_ENV_FILE"
+          printf '%s' "$STAGING_ENV_FILE" > .env.staging
+          chmod 600 .env.staging
+      - name: Deploy
+        shell: pwsh
+        run: ./scripts/staging-up.ps1
+      - name: Health
+        shell: pwsh
+        run: ./scripts/staging-health.ps1
+      - name: Smoke
+        shell: pwsh
+        run: ./scripts/smoke-staging-v1.ps1
