@@ -1,20 +1,24 @@
-﻿name: Staging
+﻿name: Staging Validation
 
 on:
   workflow_dispatch:
   push:
-    branches: [feature/cicd-v1]
+    branches:
+      - feature/cicd-v1
 
 concurrency:
-  group: wise-one-staging
-  cancel-in-progress: false
+  group: wise-one-staging-validation
+  cancel-in-progress: true
 
 jobs:
-  validate-compose:
+  validate-staging:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v7
-      - name: Create ephemeral validation env
+
+      - name: Create ephemeral staging env
+        shell: bash
         run: |
           cat > .env.staging <<'ENV'
           POSTGRES_DB=wiseone_staging
@@ -30,31 +34,13 @@ jobs:
           CORS_ORIGINS=http://localhost:8080
           SWAGGER_ENABLED=true
           ENV
-      - run: docker compose --env-file .env.staging -f docker-compose.staging.yml config --quiet
-      - run: rm -f .env.staging
 
-  deploy:
-    if: ${{ vars.STAGING_DEPLOY_ENABLED == 'true' }}
-    needs: validate-compose
-    runs-on: [self-hosted, staging]
-    environment: staging
-    steps:
-      - uses: actions/checkout@v7
-      - name: Write staging env from GitHub secrets
-        shell: bash
-        env:
-          STAGING_ENV_FILE: ${{ secrets.STAGING_ENV_FILE }}
-        run: |
-          test -n "$STAGING_ENV_FILE"
-          printf '%s' "$STAGING_ENV_FILE" > .env.staging
-          chmod 600 .env.staging
-      - name: Deploy
-        shell: pwsh
-        run: ./scripts/staging-up.ps1
-      - name: Health
-        shell: pwsh
-        run: ./scripts/staging-health.ps1
-      - name: Smoke
-        shell: pwsh
-        run: ./scripts/smoke-staging-v1.ps1
+      - name: Validate Docker Compose
+        run: docker compose --env-file .env.staging -f docker-compose.staging.yml config --quiet
 
+      - name: Build staging images
+        run: docker compose --env-file .env.staging -f docker-compose.staging.yml build
+
+      - name: Cleanup
+        if: always()
+        run: rm -f .env.staging
