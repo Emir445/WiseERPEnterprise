@@ -12,11 +12,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node Backend
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: apps/backend/package-lock.json
 
       - name: Backend install
         working-directory: apps/backend
@@ -31,6 +32,13 @@ jobs:
       - name: Backend build
         working-directory: apps/backend
         run: npm run build
+
+      - name: Setup Node Frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
 
       - name: Frontend install
         working-directory: apps/frontend
