@@ -30,7 +30,9 @@
     "setup:logistics-commercial-v3": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-logistics-commercial-v3.ps1",
     "smoke:logistics-commercial-v3": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-logistics-commercial-v3.ps1",
     "setup:production-pcp-v1": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-production-pcp-v1.ps1",
-    "smoke:production-pcp-v1": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-production-pcp-v1.ps1"
+    "smoke:production-pcp-v1": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-production-pcp-v1.ps1",
+    "setup:crm-services-v1": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-crm-services-v1.ps1",
+    "smoke:crm-services-v1": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-crm-services-v1.ps1"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

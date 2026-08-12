@@ -147,6 +147,17 @@ async function main(): Promise<void> {
     'production.orders.start',
     'production.orders.complete',
     'production.orders.cancel',
+    'crm.leads.create',
+    'crm.leads.read',
+    'crm.leads.convert',
+    'crm.opportunities.create',
+    'crm.opportunities.read',
+    'crm.activities.create',
+    'crm.activities.update',
+    'services.orders.create',
+    'services.orders.read',
+    'services.orders.execute',
+    'services.orders.invoice',
   ];
 
   for (const code of permissionCodes) {

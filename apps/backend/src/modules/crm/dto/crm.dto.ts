@@ -1,0 +1,6 @@
+import { Type } from 'class-transformer';
+import { IsEmail, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+export class CreateLeadDto { @IsString() name!: string; @IsOptional() @IsString() companyName?: string; @IsOptional() @IsEmail() email?: string; @IsOptional() @IsString() phone?: string; @IsOptional() @IsString() source?: string; @IsOptional() @IsString() notes?: string; }
+export class CreateOpportunityDto { @IsString() title!: string; @IsOptional() @IsUUID() leadId?: string; @IsOptional() @IsUUID() customerId?: string; @IsOptional() @IsString() stage?: string; @IsOptional() @Type(()=>Number) @IsNumber() @Min(0) amount?: number; @IsOptional() @Type(()=>Number) @IsInt() @Min(0) @Max(100) probability?: number; @IsOptional() @IsString() notes?: string; }
+export class CreateActivityDto { @IsOptional() @IsUUID() leadId?: string; @IsOptional() @IsUUID() opportunityId?: string; @IsEnum(['CALL','EMAIL','MEETING','TASK','NOTE']) type!: any; @IsString() subject!: string; @IsOptional() @IsString() description?: string; @IsOptional() @IsString() dueAt?: string; }
+export class ConvertLeadDto { @IsString() document!: string; @IsOptional() @IsString() email?: string; @IsOptional() @IsString() phone?: string; }

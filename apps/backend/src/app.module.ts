@@ -4,6 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './core/auth/auth.module';
 import { ChartAccountsModule } from './modules/chart-accounts/chart-accounts.module';
 import { CarriersModule } from './modules/carriers/carriers.module';
+import { CrmModule } from './modules/crm/crm.module';
+import { ServicesModule } from './modules/services/services.module';
 import { CostCentersModule } from './modules/cost-centers/cost-centers.module';
 import { BranchesModule } from './modules/branches/branches.module';
 import { DatabaseModule } from './core/database/database.module';
@@ -37,6 +39,8 @@ import { UsersModule } from './modules/users/users.module';
       expandVariables: true,
     }),
     DatabaseModule,
+    CrmModule,
+    ServicesModule,
     AuthModule,
     HealthModule,
     BranchesModule,
