@@ -1,7 +1,9 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from './core/auth/auth.module';
+import { RequestContextMiddleware } from './core/http/request-context.middleware';
+import { AuditModule } from './modules/audit/audit.module';
 import { ChartAccountsModule } from './modules/chart-accounts/chart-accounts.module';
 import { CarriersModule } from './modules/carriers/carriers.module';
 import { CrmModule } from './modules/crm/crm.module';
@@ -39,6 +41,7 @@ import { UsersModule } from './modules/users/users.module';
       expandVariables: true,
     }),
     DatabaseModule,
+    AuditModule,
     CrmModule,
     ServicesModule,
     AuthModule,
@@ -70,4 +73,4 @@ import { UsersModule } from './modules/users/users.module';
     ReportsModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule { configure(consumer: MiddlewareConsumer): void { consumer.apply(RequestContextMiddleware).forRoutes('*'); } }
