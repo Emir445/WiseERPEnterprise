@@ -24,7 +24,9 @@
     "setup:commercial-fiscal": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-commercial-fiscal.ps1",
     "smoke:commercial-fiscal": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-commercial-fiscal.ps1",
     "setup:treasury-finance-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-treasury-finance-v2.ps1",
-    "smoke:treasury-finance-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-treasury-finance-v2.ps1"
+    "smoke:treasury-finance-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-treasury-finance-v2.ps1",
+    "setup:procurement-commercial-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-procurement-commercial-v2.ps1",
+    "smoke:procurement-commercial-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-procurement-commercial-v2.ps1"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

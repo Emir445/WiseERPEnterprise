@@ -118,6 +118,13 @@ async function main(): Promise<void> {
     'treasury.cash.open',
     'treasury.cash.close',
     'treasury.cash.read',
+    'procurement.requests.create',
+    'procurement.requests.read',
+    'procurement.requests.approve',
+    'procurement.orders.create',
+    'procurement.orders.read',
+    'procurement.orders.confirm',
+    'procurement.receipts.create',
   ];
 
   for (const code of permissionCodes) {
