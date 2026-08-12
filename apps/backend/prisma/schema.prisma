@@ -165,6 +165,13 @@ enum CustomerReturnStatus {
   CANCELLED
 }
 
+enum ProductionOrderStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
 enum FiscalDocumentType {
   NFE
   NFCE
@@ -223,6 +230,8 @@ model Company {
   carriers             Carrier[]
   shipments            Shipment[]
   customerReturns      CustomerReturn[]
+  billsOfMaterial      BillOfMaterial[]
+  productionOrders     ProductionOrder[]
 
   @@map("companies")
 }
@@ -261,6 +270,7 @@ model Branch {
   goodsReceipts      GoodsReceipt[]
   shipments          Shipment[]
   customerReturns    CustomerReturn[]
+  productionOrders   ProductionOrder[]
 
   @@unique([companyId, code])
   @@index([companyId, status])
@@ -490,6 +500,11 @@ model Product {
   goodsReceiptItems    GoodsReceiptItem[]
   shipmentItems        ShipmentItem[]
   customerReturnItems  CustomerReturnItem[]
+  manufacturedBoms     BillOfMaterial[]        @relation("BomFinishedProduct")
+  bomComponents        BillOfMaterialItem[]    @relation("BomComponent")
+  productionProducts   ProductionOrder[]       @relation("ProductionFinishedProduct")
+  productionComponents ProductionConsumption[] @relation("ProductionComponent")
+  productionOutputs    ProductionOutput[]      @relation("ProductionOutputProduct")
 
   @@unique([companyId, sku])
   @@unique([companyId, barcode])
@@ -1322,4 +1337,100 @@ model CustomerReturnItem {
   @@index([customerReturnId])
   @@index([productId])
   @@map("customer_return_items")
+}
+
+model BillOfMaterial {
+  id               String               @id @default(uuid()) @db.Uuid
+  companyId        String               @map("company_id") @db.Uuid
+  productId        String               @map("product_id") @db.Uuid
+  name             String
+  version          Int                  @default(1)
+  yieldQuantity    Decimal              @default(1) @map("yield_quantity") @db.Decimal(15, 4)
+  status           RecordStatus         @default(ACTIVE)
+  notes            String?
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+  company          Company              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  product          Product              @relation("BomFinishedProduct", fields: [productId], references: [id], onDelete: Restrict)
+  items            BillOfMaterialItem[]
+  productionOrders ProductionOrder[]
+
+  @@unique([companyId, productId, version])
+  @@index([companyId, status])
+  @@map("bills_of_material")
+}
+
+model BillOfMaterialItem {
+  id          String         @id @default(uuid()) @db.Uuid
+  bomId       String         @map("bom_id") @db.Uuid
+  productId   String         @map("product_id") @db.Uuid
+  quantity    Decimal        @db.Decimal(15, 4)
+  lossPercent Decimal        @default(0) @map("loss_percent") @db.Decimal(7, 4)
+  notes       String?
+  bom         BillOfMaterial @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  product     Product        @relation("BomComponent", fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([bomId, productId])
+  @@index([productId])
+  @@map("bill_of_material_items")
+}
+
+model ProductionOrder {
+  id               String                  @id @default(uuid()) @db.Uuid
+  companyId        String                  @map("company_id") @db.Uuid
+  branchId         String                  @map("branch_id") @db.Uuid
+  bomId            String                  @map("bom_id") @db.Uuid
+  productId        String                  @map("product_id") @db.Uuid
+  number           String
+  plannedQuantity  Decimal                 @map("planned_quantity") @db.Decimal(15, 4)
+  producedQuantity Decimal                 @default(0) @map("produced_quantity") @db.Decimal(15, 4)
+  status           ProductionOrderStatus   @default(PLANNED)
+  plannedCost      Decimal                 @default(0) @map("planned_cost") @db.Decimal(15, 4)
+  actualCost       Decimal                 @default(0) @map("actual_cost") @db.Decimal(15, 4)
+  notes            String?
+  startedAt        DateTime?               @map("started_at")
+  completedAt      DateTime?               @map("completed_at")
+  createdAt        DateTime                @default(now()) @map("created_at")
+  updatedAt        DateTime                @updatedAt @map("updated_at")
+  company          Company                 @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  branch           Branch                  @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  bom              BillOfMaterial          @relation(fields: [bomId], references: [id], onDelete: Restrict)
+  product          Product                 @relation("ProductionFinishedProduct", fields: [productId], references: [id], onDelete: Restrict)
+  consumptions     ProductionConsumption[]
+  outputs          ProductionOutput[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([branchId, productId])
+  @@map("production_orders")
+}
+
+model ProductionConsumption {
+  id                String          @id @default(uuid()) @db.Uuid
+  productionOrderId String          @map("production_order_id") @db.Uuid
+  productId         String          @map("product_id") @db.Uuid
+  plannedQuantity   Decimal         @map("planned_quantity") @db.Decimal(15, 4)
+  consumedQuantity  Decimal         @default(0) @map("consumed_quantity") @db.Decimal(15, 4)
+  unitCost          Decimal         @default(0) @map("unit_cost") @db.Decimal(15, 4)
+  createdAt         DateTime        @default(now()) @map("created_at")
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+  product           Product         @relation("ProductionComponent", fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([productionOrderId, productId])
+  @@map("production_consumptions")
+}
+
+model ProductionOutput {
+  id                String          @id @default(uuid()) @db.Uuid
+  productionOrderId String          @map("production_order_id") @db.Uuid
+  productId         String          @map("product_id") @db.Uuid
+  quantity          Decimal         @db.Decimal(15, 4)
+  unitCost          Decimal         @default(0) @map("unit_cost") @db.Decimal(15, 4)
+  notes             String?
+  createdAt         DateTime        @default(now()) @map("created_at")
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+  product           Product         @relation("ProductionOutputProduct", fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([productionOrderId])
+  @@map("production_outputs")
 }

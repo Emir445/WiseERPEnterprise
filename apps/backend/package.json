@@ -28,7 +28,9 @@
     "setup:procurement-commercial-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-procurement-commercial-v2.ps1",
     "smoke:procurement-commercial-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-procurement-commercial-v2.ps1",
     "setup:logistics-commercial-v3": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-logistics-commercial-v3.ps1",
-    "smoke:logistics-commercial-v3": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-logistics-commercial-v3.ps1"
+    "smoke:logistics-commercial-v3": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-logistics-commercial-v3.ps1",
+    "setup:production-pcp-v1": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-production-pcp-v1.ps1",
+    "smoke:production-pcp-v1": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-production-pcp-v1.ps1"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

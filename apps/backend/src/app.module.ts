@@ -19,6 +19,7 @@ import { PaymentTermsModule } from './modules/payment-terms/payment-terms.module
 import { ProductCategoriesModule } from './modules/product-categories/product-categories.module';
 import { ProductsModule } from './modules/products/products.module';
 import { ProcurementModule } from './modules/procurement/procurement.module';
+import { ProductionModule } from './modules/production/production.module';
 import { PurchasesModule } from './modules/purchases/purchases.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
@@ -50,6 +51,7 @@ import { UsersModule } from './modules/users/users.module';
     ProductCategoriesModule,
     ProductsModule,
     ProcurementModule,
+    ProductionModule,
     InventoryModule,
     LogisticsModule,
     PurchasesModule,

@@ -140,6 +140,13 @@ async function main(): Promise<void> {
     'logistics.returns.read',
     'logistics.returns.receive',
     'logistics.returns.cancel',
+    'production.bom.create',
+    'production.bom.read',
+    'production.orders.create',
+    'production.orders.read',
+    'production.orders.start',
+    'production.orders.complete',
+    'production.orders.cancel',
   ];
 
   for (const code of permissionCodes) {
