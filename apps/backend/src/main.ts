@@ -8,6 +8,17 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './core/http/all-exceptions.filter';
 
+function parseCorsOrigins(value?: string): true | string[] {
+  if (!value || value.trim() === '*') {
+    return true;
+  }
+
+  return value
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
@@ -17,7 +28,7 @@ async function bootstrap(): Promise<void> {
   app.use(compression());
 
   app.enableCors({
-    origin: true,
+    origin: parseCorsOrigins(config.get<string>('CORS_ORIGINS')),
     credentials: true,
   });
 
@@ -31,30 +42,32 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Wise One API')
-    .setDescription('API da plataforma Wise One Enterprise')
-    .setVersion('0.1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        in: 'header',
-      },
-      'bearer',
-    )
-    .build();
+  const swaggerEnabled =
+    config.get<string>('SWAGGER_ENABLED', 'true').toLowerCase() === 'true';
 
-  const document = SwaggerModule.createDocument(
-    app,
-    swaggerConfig,
-  );
+  if (swaggerEnabled) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Wise One API')
+      .setDescription('API da plataforma Wise One Enterprise')
+      .setVersion('0.1.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          in: 'header',
+        },
+        'bearer',
+      )
+      .build();
 
-  SwaggerModule.setup('docs', app, document);
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('docs', app, document);
+  }
 
   const port = config.get<number>('PORT', 3000);
-  await app.listen(port);
+  const host = config.get<string>('HOST', '0.0.0.0');
+  await app.listen(port, host);
 }
 
 void bootstrap();
