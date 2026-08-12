@@ -125,6 +125,21 @@ async function main(): Promise<void> {
     'procurement.orders.read',
     'procurement.orders.confirm',
     'procurement.receipts.create',
+    'sales_orders.reserve',
+    'carriers.create',
+    'carriers.read',
+    'carriers.update',
+    'carriers.delete',
+    'logistics.shipments.create',
+    'logistics.shipments.read',
+    'logistics.shipments.pick',
+    'logistics.shipments.ship',
+    'logistics.shipments.deliver',
+    'logistics.shipments.cancel',
+    'logistics.returns.create',
+    'logistics.returns.read',
+    'logistics.returns.receive',
+    'logistics.returns.cancel',
   ];
 
   for (const code of permissionCodes) {

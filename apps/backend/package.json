@@ -26,7 +26,9 @@
     "setup:treasury-finance-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-treasury-finance-v2.ps1",
     "smoke:treasury-finance-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-treasury-finance-v2.ps1",
     "setup:procurement-commercial-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-procurement-commercial-v2.ps1",
-    "smoke:procurement-commercial-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-procurement-commercial-v2.ps1"
+    "smoke:procurement-commercial-v2": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-procurement-commercial-v2.ps1",
+    "setup:logistics-commercial-v3": "powershell -ExecutionPolicy Bypass -File ./scripts/finalize-logistics-commercial-v3.ps1",
+    "smoke:logistics-commercial-v3": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-logistics-commercial-v3.ps1"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

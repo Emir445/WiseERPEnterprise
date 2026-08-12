@@ -151,6 +151,20 @@ enum SalesOrderStatus {
   CANCELLED
 }
 
+enum ShipmentStatus {
+  DRAFT
+  PICKING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum CustomerReturnStatus {
+  DRAFT
+  RECEIVED
+  CANCELLED
+}
+
 enum FiscalDocumentType {
   NFE
   NFCE
@@ -206,6 +220,9 @@ model Company {
   purchaseRequests     PurchaseRequest[]
   purchaseOrders       PurchaseOrder[]
   goodsReceipts        GoodsReceipt[]
+  carriers             Carrier[]
+  shipments            Shipment[]
+  customerReturns      CustomerReturn[]
 
   @@map("companies")
 }
@@ -242,6 +259,8 @@ model Branch {
   purchaseRequests   PurchaseRequest[]
   purchaseOrders     PurchaseOrder[]
   goodsReceipts      GoodsReceipt[]
+  shipments          Shipment[]
+  customerReturns    CustomerReturn[]
 
   @@unique([companyId, code])
   @@index([companyId, status])
@@ -397,6 +416,8 @@ model Customer {
   quotes           Quote[]
   salesOrders      SalesOrder[]
   fiscalDocuments  FiscalDocument[]
+  shipments        Shipment[]
+  customerReturns  CustomerReturn[]
 
   @@unique([companyId, document])
   @@index([companyId, name])
@@ -467,6 +488,8 @@ model Product {
   purchaseRequestItems PurchaseRequestItem[]
   purchaseOrderItems   PurchaseOrderItem[]
   goodsReceiptItems    GoodsReceiptItem[]
+  shipmentItems        ShipmentItem[]
+  customerReturnItems  CustomerReturnItem[]
 
   @@unique([companyId, sku])
   @@unique([companyId, barcode])
@@ -580,13 +603,14 @@ model Sale {
   updatedAt     DateTime   @updatedAt @map("updated_at")
   deletedAt     DateTime?  @map("deleted_at")
 
-  company        Company         @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  branch         Branch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  customer       Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  items          SaleItem[]
-  paymentTerm    PaymentTerm?    @relation(fields: [paymentTermId], references: [id], onDelete: SetNull)
-  salesOrder     SalesOrder?     @relation("SalesOrderSale")
-  fiscalDocument FiscalDocument?
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  branch          Branch           @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  customer        Customer         @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  items           SaleItem[]
+  paymentTerm     PaymentTerm?     @relation(fields: [paymentTermId], references: [id], onDelete: SetNull)
+  salesOrder      SalesOrder?      @relation("SalesOrderSale")
+  fiscalDocument  FiscalDocument?
+  customerReturns CustomerReturn[]
 
   @@unique([companyId, number])
   @@index([companyId, status])
@@ -808,6 +832,7 @@ model SalesOrder {
   quote       Quote?           @relation(fields: [quoteId], references: [id], onDelete: SetNull)
   sale        Sale?            @relation("SalesOrderSale", fields: [saleId], references: [id], onDelete: SetNull)
   items       SalesOrderItem[]
+  shipments   Shipment[]
 
   @@unique([companyId, number])
   @@index([companyId, status])
@@ -827,8 +852,9 @@ model SalesOrderItem {
   fulfilledQuantity Decimal  @default(0) @map("fulfilled_quantity") @db.Decimal(15, 4)
   createdAt         DateTime @default(now()) @map("created_at")
 
-  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
-  product    Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  salesOrder    SalesOrder     @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  shipmentItems ShipmentItem[]
 
   @@index([salesOrderId])
   @@index([productId])
@@ -1186,4 +1212,114 @@ model GoodsReceiptItem {
 
   @@index([goodsReceiptId])
   @@map("goods_receipt_items")
+}
+
+model Carrier {
+  id        String       @id @default(uuid()) @db.Uuid
+  companyId String       @map("company_id") @db.Uuid
+  name      String
+  document  String?
+  email     String?
+  phone     String?
+  status    RecordStatus @default(ACTIVE)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  deletedAt DateTime?    @map("deleted_at")
+
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  shipments Shipment[]
+
+  @@unique([companyId, name])
+  @@index([companyId, status])
+  @@map("carriers")
+}
+
+model Shipment {
+  id           String         @id @default(uuid()) @db.Uuid
+  companyId    String         @map("company_id") @db.Uuid
+  branchId     String         @map("branch_id") @db.Uuid
+  customerId   String         @map("customer_id") @db.Uuid
+  salesOrderId String         @map("sales_order_id") @db.Uuid
+  carrierId    String?        @map("carrier_id") @db.Uuid
+  number       String
+  status       ShipmentStatus @default(DRAFT)
+  trackingCode String?        @map("tracking_code")
+  notes        String?
+  shippedAt    DateTime?      @map("shipped_at")
+  deliveredAt  DateTime?      @map("delivered_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  company    Company        @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  branch     Branch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  customer   Customer       @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  salesOrder SalesOrder     @relation(fields: [salesOrderId], references: [id], onDelete: Restrict)
+  carrier    Carrier?       @relation(fields: [carrierId], references: [id], onDelete: SetNull)
+  items      ShipmentItem[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([salesOrderId])
+  @@index([carrierId])
+  @@map("shipments")
+}
+
+model ShipmentItem {
+  id               String   @id @default(uuid()) @db.Uuid
+  shipmentId       String   @map("shipment_id") @db.Uuid
+  salesOrderItemId String   @map("sales_order_item_id") @db.Uuid
+  productId        String   @map("product_id") @db.Uuid
+  quantity         Decimal  @db.Decimal(15, 4)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  shipment       Shipment       @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  salesOrderItem SalesOrderItem @relation(fields: [salesOrderItemId], references: [id], onDelete: Restrict)
+  product        Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([shipmentId])
+  @@index([salesOrderItemId])
+  @@index([productId])
+  @@map("shipment_items")
+}
+
+model CustomerReturn {
+  id         String               @id @default(uuid()) @db.Uuid
+  companyId  String               @map("company_id") @db.Uuid
+  branchId   String               @map("branch_id") @db.Uuid
+  customerId String               @map("customer_id") @db.Uuid
+  saleId     String               @map("sale_id") @db.Uuid
+  number     String
+  status     CustomerReturnStatus @default(DRAFT)
+  notes      String?
+  receivedAt DateTime?            @map("received_at")
+  createdAt  DateTime             @default(now()) @map("created_at")
+  updatedAt  DateTime             @updatedAt @map("updated_at")
+
+  company  Company              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  branch   Branch               @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  customer Customer             @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  sale     Sale                 @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  items    CustomerReturnItem[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([saleId])
+  @@map("customer_returns")
+}
+
+model CustomerReturnItem {
+  id               String   @id @default(uuid()) @db.Uuid
+  customerReturnId String   @map("customer_return_id") @db.Uuid
+  productId        String   @map("product_id") @db.Uuid
+  quantity         Decimal  @db.Decimal(15, 4)
+  reason           String?
+  restock          Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  customerReturn CustomerReturn @relation(fields: [customerReturnId], references: [id], onDelete: Cascade)
+  product        Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([customerReturnId])
+  @@index([productId])
+  @@map("customer_return_items")
 }

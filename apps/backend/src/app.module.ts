@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from './core/auth/auth.module';
 import { ChartAccountsModule } from './modules/chart-accounts/chart-accounts.module';
+import { CarriersModule } from './modules/carriers/carriers.module';
 import { CostCentersModule } from './modules/cost-centers/cost-centers.module';
 import { BranchesModule } from './modules/branches/branches.module';
 import { DatabaseModule } from './core/database/database.module';
@@ -12,6 +13,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { FiscalModule } from './modules/fiscal/fiscal.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { LogisticsModule } from './modules/logistics/logistics.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { PaymentTermsModule } from './modules/payment-terms/payment-terms.module';
 import { ProductCategoriesModule } from './modules/product-categories/product-categories.module';
@@ -37,6 +39,7 @@ import { UsersModule } from './modules/users/users.module';
     AuthModule,
     HealthModule,
     BranchesModule,
+    CarriersModule,
     UsersModule,
     RolesModule,
     PermissionsModule,
@@ -48,6 +51,7 @@ import { UsersModule } from './modules/users/users.module';
     ProductsModule,
     ProcurementModule,
     InventoryModule,
+    LogisticsModule,
     PurchasesModule,
     QuotesModule,
     SalesOrdersModule,
