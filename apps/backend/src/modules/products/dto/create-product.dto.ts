@@ -1,9 +1,10 @@
-﻿import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEnum,
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Min,
   MinLength,
 } from 'class-validator';
@@ -23,6 +24,11 @@ export enum ProductUnit {
 }
 
 export class CreateProductDto {
+  @ApiPropertyOptional({ description: 'Categoria do produto' })
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
+
   @ApiProperty({ example: 'Água Mineral 500ml' })
   @IsString()
   @MinLength(2)
@@ -49,6 +55,21 @@ export class CreateProductDto {
   })
   @IsEnum(ProductUnit)
   unit!: ProductUnit;
+
+  @ApiPropertyOptional({ example: '22011000' })
+  @IsOptional()
+  @IsString()
+  ncm?: string;
+
+  @ApiPropertyOptional({ example: '0300700' })
+  @IsOptional()
+  @IsString()
+  cest?: string;
+
+  @ApiPropertyOptional({ example: '0' })
+  @IsOptional()
+  @IsString()
+  fiscalOrigin?: string;
 
   @ApiPropertyOptional({ example: 1.25 })
   @IsOptional()

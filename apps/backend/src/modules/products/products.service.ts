@@ -1,4 +1,4 @@
-﻿import {
+import {
   ConflictException,
   Injectable,
   NotFoundException,
@@ -14,6 +14,7 @@ export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(companyId: string, dto: CreateProductDto) {
+    await this.validateCategory(companyId, dto.categoryId);
     const existingSku = await this.prisma.product.findFirst({
       where: {
         companyId,
@@ -48,10 +49,14 @@ export class ProductsService {
     return this.prisma.product.create({
       data: {
         companyId,
+        categoryId: dto.categoryId,
         name: dto.name,
         description: dto.description,
         sku: dto.sku,
         barcode: dto.barcode,
+        ncm: dto.ncm,
+        cest: dto.cest,
+        fiscalOrigin: dto.fiscalOrigin,
         unit: dto.unit,
         costPrice: dto.costPrice ?? 0,
         salePrice: dto.salePrice ?? 0,
@@ -71,6 +76,7 @@ export class ProductsService {
       companyId,
       deletedAt: null,
       ...(query.unit ? { unit: query.unit } : {}),
+      ...(query.categoryId ? { categoryId: query.categoryId } : {}),
       ...(query.status ? { status: query.status } : {}),
       ...(query.search
         ? {
@@ -105,6 +111,7 @@ export class ProductsService {
         orderBy: {
           name: 'asc',
         },
+        include: { category: true },
       }),
       this.prisma.product.count({
         where,
@@ -129,6 +136,7 @@ export class ProductsService {
         companyId,
         deletedAt: null,
       },
+      include: { category: true },
     });
 
     if (!product) {
@@ -146,6 +154,7 @@ export class ProductsService {
     dto: UpdateProductDto,
   ) {
     await this.findOne(companyId, id);
+    await this.validateCategory(companyId, dto.categoryId);
 
     if (dto.sku) {
       const existingSku = await this.prisma.product.findFirst({
@@ -185,6 +194,7 @@ export class ProductsService {
     return this.prisma.product.update({
       where: { id },
       data: {
+        ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId } : {}),
         ...(dto.name !== undefined ? { name: dto.name } : {}),
         ...(dto.description !== undefined
           ? { description: dto.description }
@@ -193,6 +203,9 @@ export class ProductsService {
         ...(dto.barcode !== undefined
           ? { barcode: dto.barcode }
           : {}),
+        ...(dto.ncm !== undefined ? { ncm: dto.ncm } : {}),
+        ...(dto.cest !== undefined ? { cest: dto.cest } : {}),
+        ...(dto.fiscalOrigin !== undefined ? { fiscalOrigin: dto.fiscalOrigin } : {}),
         ...(dto.unit !== undefined ? { unit: dto.unit } : {}),
         ...(dto.costPrice !== undefined
           ? { costPrice: dto.costPrice }
@@ -205,6 +218,16 @@ export class ProductsService {
           : {}),
       },
     });
+  }
+
+  private async validateCategory(companyId: string, categoryId?: string) {
+    if (!categoryId) return;
+    const category = await this.prisma.productCategory.findFirst({
+      where: { id: categoryId, companyId, deletedAt: null, status: 'ACTIVE' },
+    });
+    if (!category) {
+      throw new NotFoundException('Categoria de produto não encontrada.');
+    }
   }
 
   async remove(companyId: string, id: string) {

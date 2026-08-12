@@ -1,7 +1,8 @@
-﻿import {
+import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Query,
   UseGuards,
@@ -17,10 +18,12 @@ import { JwtAuthGuard } from '../../core/auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../../core/auth/interfaces/jwt-payload.interface';
 import { Permissions } from '../../core/permissions/decorators/permissions.decorator';
 import { PermissionsGuard } from '../../core/permissions/guards/permissions.guard';
+import { CreateInventoryTransferDto } from './dto/create-inventory-transfer.dto';
 import { InventoryAdjustmentDto } from './dto/inventory-adjustment.dto';
 import { InventoryEntryDto } from './dto/inventory-entry.dto';
 import { InventoryExitDto } from './dto/inventory-exit.dto';
 import { ListInventoryQueryDto } from './dto/list-inventory-query.dto';
+import { ListInventoryTransfersQueryDto } from './dto/list-inventory-transfers-query.dto';
 import { InventoryService } from './inventory.service';
 
 @ApiTags('Estoque')
@@ -61,6 +64,52 @@ export class InventoryController {
       currentUser.companyId,
       productId,
       branchId,
+    );
+  }
+
+
+  @Get('transfers')
+  @Permissions('inventory.transfer')
+  @ApiOperation({
+    summary: 'Listar transferências de estoque',
+  })
+  findTransfers(
+    @CurrentUser() currentUser: JwtPayload,
+    @Query() query: ListInventoryTransfersQueryDto,
+  ) {
+    return this.inventoryService.findTransfers(
+      currentUser.companyId,
+      query,
+    );
+  }
+
+  @Post('transfers')
+  @Permissions('inventory.transfer')
+  @ApiOperation({
+    summary: 'Transferir estoque entre filiais',
+  })
+  transfer(
+    @CurrentUser() currentUser: JwtPayload,
+    @Body() dto: CreateInventoryTransferDto,
+  ) {
+    return this.inventoryService.transfer(
+      currentUser.companyId,
+      dto,
+    );
+  }
+
+  @Post('transfers/:id/cancel')
+  @Permissions('inventory.transfer')
+  @ApiOperation({
+    summary: 'Cancelar transferência e reverter o estoque',
+  })
+  cancelTransfer(
+    @CurrentUser() currentUser: JwtPayload,
+    @Param('id') id: string,
+  ) {
+    return this.inventoryService.cancelTransfer(
+      currentUser.companyId,
+      id,
     );
   }
 

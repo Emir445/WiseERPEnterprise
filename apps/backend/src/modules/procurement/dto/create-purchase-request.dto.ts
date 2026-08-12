@@ -1,0 +1,3 @@
+import { Type } from 'class-transformer'; import { ArrayMinSize, IsArray, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateNested } from 'class-validator';
+export class PurchaseRequestItemDto{@IsUUID() productId!:string; @Type(()=>Number) @IsNumber() @Min(0.0001) quantity!:number; @IsOptional() @IsString() notes?:string}
+export class CreatePurchaseRequestDto{@IsUUID() branchId!:string; @IsString() number!:string; @IsOptional() @IsString() notes?:string; @IsArray() @ArrayMinSize(1) @ValidateNested({each:true}) @Type(()=>PurchaseRequestItemDto) items!:PurchaseRequestItemDto[]}

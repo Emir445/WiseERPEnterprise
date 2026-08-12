@@ -1,0 +1,46 @@
+﻿name: Staging Validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/cicd-v1
+
+concurrency:
+  group: wise-one-staging-validation
+  cancel-in-progress: true
+
+jobs:
+  validate-staging:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Create ephemeral staging env
+        shell: bash
+        run: |
+          cat > .env.staging <<'ENV'
+          POSTGRES_DB=wiseone_staging
+          POSTGRES_USER=wise_staging
+          POSTGRES_PASSWORD=ci_only_not_for_deploy
+          JWT_ACCESS_SECRET=ci_access_secret_0123456789012345678901234567890123456789
+          JWT_REFRESH_SECRET=ci_refresh_secret_0123456789012345678901234567890123456789
+          JWT_ACCESS_EXPIRES_IN=15m
+          JWT_REFRESH_EXPIRES_IN=7d
+          MINIO_ROOT_USER=wise_staging
+          MINIO_ROOT_PASSWORD=ci_minio_password_only
+          STAGING_HTTP_PORT=8080
+          CORS_ORIGINS=http://localhost:8080
+          SWAGGER_ENABLED=true
+          ENV
+
+      - name: Validate Docker Compose
+        run: docker compose --env-file .env.staging -f docker-compose.staging.yml config --quiet
+
+      - name: Build staging images
+        run: docker compose --env-file .env.staging -f docker-compose.staging.yml build
+
+      - name: Cleanup
+        if: always()
+        run: rm -f .env.staging
