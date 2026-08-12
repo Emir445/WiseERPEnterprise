@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   push:
@@ -12,6 +12,8 @@ concurrency:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://ci_user:ci_password@localhost:5432/wiseone_ci?schema=public
     defaults:
       run:
         working-directory: apps/backend
@@ -64,3 +66,4 @@ jobs:
           file: apps/frontend/Dockerfile.staging
           push: false
           tags: wise-one-frontend:ci
+
