@@ -1,4 +1,4 @@
-name: Staging
+﻿name: Staging
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ jobs:
   validate-compose:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Create ephemeral validation env
         run: |
           cat > .env.staging <<'ENV'
@@ -39,7 +39,7 @@ jobs:
     runs-on: [self-hosted, staging]
     environment: staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Write staging env from GitHub secrets
         shell: bash
         env:
@@ -57,3 +57,4 @@ jobs:
       - name: Smoke
         shell: pwsh
         run: ./scripts/smoke-staging-v1.ps1
+
