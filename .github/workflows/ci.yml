@@ -28,7 +28,7 @@ jobs:
       - run: npx prisma validate
       - run: npx prisma generate
       - run: npm run build
-      - run: npm test -- --runInBand --passWithNoTests
+      - run: npm test -- --runInBand
 
   frontend:
     runs-on: ubuntu-latest
