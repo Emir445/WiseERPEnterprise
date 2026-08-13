@@ -1,4 +1,4 @@
-﻿name: Project Verification
+name: Project Verification
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node Backend
         uses: actions/setup-node@v4
