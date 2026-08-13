@@ -3,7 +3,29 @@ import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+function requireAdminPassword(): string {
+  const password = process.env.SEED_ADMIN_PASSWORD?.trim();
+
+  if (!password) {
+    throw new Error(
+      'SEED_ADMIN_PASSWORD nao definido. Configure uma senha forte antes de executar o seed.',
+    );
+  }
+
+  if (password.length < 12) {
+    throw new Error('SEED_ADMIN_PASSWORD deve ter pelo menos 12 caracteres.');
+  }
+
+  return password;
+}
+
 async function main(): Promise<void> {
+  const adminPassword = requireAdminPassword();
+  const adminEmail =
+    process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase() ??
+    'admin@cerradusgelo.local';
+  const adminName = process.env.SEED_ADMIN_NAME?.trim() || 'Administrador';
+
   const company = await prisma.company.upsert({
     where: {
       document: '00000000000100',
@@ -60,17 +82,17 @@ async function main(): Promise<void> {
     },
   });
 
-  const passwordHash = await bcrypt.hash('WiseERP@123', 12);
+  const passwordHash = await bcrypt.hash(adminPassword, 12);
 
   const user = await prisma.user.upsert({
     where: {
       companyId_email: {
         companyId: company.id,
-        email: 'admin@cerradusgelo.local',
+        email: adminEmail,
       },
     },
     update: {
-      name: 'Administrador',
+      name: adminName,
       branchId: branch.id,
       passwordHash,
       status: 'ACTIVE',
@@ -78,8 +100,8 @@ async function main(): Promise<void> {
     create: {
       companyId: company.id,
       branchId: branch.id,
-      name: 'Administrador',
-      email: 'admin@cerradusgelo.local',
+      name: adminName,
+      email: adminEmail,
       passwordHash,
       status: 'ACTIVE',
     },
@@ -99,9 +121,9 @@ async function main(): Promise<void> {
     },
   });
 
-  console.log('Seed concluído.');
-  console.log('Usuário: admin@cerradusgelo.local');
-  console.log('Senha: WiseERP@123');
+  console.log('Seed concluido.');
+  console.log(`Usuario administrador: ${adminEmail}`);
+  console.log('Senha nao exibida por seguranca.');
 }
 
 main()
