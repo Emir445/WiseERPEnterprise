@@ -1,4 +1,4 @@
-﻿name: CodeQL Security
+name: CodeQL Security
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
