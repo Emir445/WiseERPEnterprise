@@ -1,45 +1,51 @@
-import { PrismaClient } from '@prisma/client';
+﻿import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-function requireAdminPassword(): string {
-  const password = process.env.SEED_ADMIN_PASSWORD?.trim();
+function requireSeedValue(name: string, minLength = 1): string {
+  const value = process.env[name]?.trim();
 
-  if (!password) {
-    throw new Error(
-      'SEED_ADMIN_PASSWORD nao definido. Configure uma senha forte antes de executar o seed.',
-    );
+  if (!value) {
+    throw new Error(`${name} nao definido.`);
   }
 
-  if (password.length < 12) {
-    throw new Error('SEED_ADMIN_PASSWORD deve ter pelo menos 12 caracteres.');
+  if (value.length < minLength) {
+    throw new Error(`${name} deve ter pelo menos ${minLength} caracteres.`);
   }
 
-  return password;
+  return value;
 }
 
 async function main(): Promise<void> {
-  const adminPassword = requireAdminPassword();
-  const adminEmail =
-    process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase() ??
-    'admin@cerradusgelo.local';
+  const companyLegalName = requireSeedValue('SEED_COMPANY_LEGAL_NAME');
+  const companyTradeName = requireSeedValue('SEED_COMPANY_TRADE_NAME');
+  const companyDocument = requireSeedValue('SEED_COMPANY_DOCUMENT');
+  const companyEmail = requireSeedValue('SEED_COMPANY_EMAIL').toLowerCase();
+
+  const branchCode =
+    process.env.SEED_BRANCH_CODE?.trim().toUpperCase() || 'MATRIZ';
+  const branchName = process.env.SEED_BRANCH_NAME?.trim() || 'Matriz';
+
+  const adminEmail = requireSeedValue('SEED_ADMIN_EMAIL').toLowerCase();
   const adminName = process.env.SEED_ADMIN_NAME?.trim() || 'Administrador';
+  const adminPassword = requireSeedValue('SEED_ADMIN_PASSWORD', 12);
 
   const company = await prisma.company.upsert({
     where: {
-      document: '00000000000100',
+      document: companyDocument,
     },
     update: {
-      legalName: "Cerradu's Gelo Ltda",
-      tradeName: "Cerradu's Gelo",
+      legalName: companyLegalName,
+      tradeName: companyTradeName,
+      email: companyEmail,
       status: 'ACTIVE',
     },
     create: {
-      legalName: "Cerradu's Gelo Ltda",
-      tradeName: "Cerradu's Gelo",
-      document: '00000000000100',
-      email: 'contato@cerradusgelo.local',
+      legalName: companyLegalName,
+      tradeName: companyTradeName,
+      document: companyDocument,
+      email: companyEmail,
       status: 'ACTIVE',
     },
   });
@@ -48,17 +54,17 @@ async function main(): Promise<void> {
     where: {
       companyId_code: {
         companyId: company.id,
-        code: 'MATRIZ',
+        code: branchCode,
       },
     },
     update: {
-      name: 'Matriz',
+      name: branchName,
       status: 'ACTIVE',
     },
     create: {
       companyId: company.id,
-      name: 'Matriz',
-      code: 'MATRIZ',
+      name: branchName,
+      code: branchCode,
       status: 'ACTIVE',
     },
   });
@@ -121,7 +127,9 @@ async function main(): Promise<void> {
     },
   });
 
-  console.log('Seed concluido.');
+  console.log('Seed de piloto concluido.');
+  console.log(`Empresa: ${companyTradeName}`);
+  console.log(`Filial: ${branchName}`);
   console.log(`Usuario administrador: ${adminEmail}`);
   console.log('Senha nao exibida por seguranca.');
 }
