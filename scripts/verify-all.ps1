@@ -1,39 +1,30 @@
-Write-Host "================================="
-Write-Host " WiseERPEnterprise Verification "
-Write-Host "================================="
+$ErrorActionPreference = "Stop"
 
-Write-Host ""
-Write-Host "[1/5] Verificando Git..."
+Write-Host "=================================" -ForegroundColor Cyan
+Write-Host " WiseERPEnterprise Verification " -ForegroundColor Cyan
+Write-Host "=================================" -ForegroundColor Cyan
 
-git status
+$requiredPaths = @(
+    ".\apps\backend",
+    ".\apps\frontend",
+    ".\apps\backend\prisma\schema.prisma",
+    ".\docker-compose.staging.yml",
+    ".\.github\workflows\ci.yml"
+)
 
-Write-Host ""
-Write-Host "[2/5] Validando Docker Compose..."
-
-docker compose -f docker-compose.staging.yml config
-
-Write-Host ""
-Write-Host "[3/5] Verificando backend..."
-
-if (Test-Path ".\backend") {
-    Write-Host "Backend encontrado"
+Write-Host "`n[1/3] Validando estrutura obrigatoria..."
+foreach ($path in $requiredPaths) {
+    if (-not (Test-Path $path)) {
+        throw "Caminho obrigatorio nao encontrado: $path"
+    }
 }
-else {
-    Write-Host "Backend nao encontrado"
-}
+Write-Host "Estrutura obrigatoria OK" -ForegroundColor Green
 
-Write-Host ""
-Write-Host "[4/5] Verificando frontend..."
-
-if (Test-Path ".\apps\frontend") {
-    Write-Host "Frontend encontrado"
-}
-else {
-    Write-Host "Frontend nao encontrado"
+Write-Host "`n[2/3] Executando verificacao completa do projeto..."
+powershell -ExecutionPolicy Bypass -File .\scripts\verify-project.ps1
+if ($LASTEXITCODE -ne 0) {
+    throw "verify-project.ps1 falhou com codigo $LASTEXITCODE"
 }
 
-Write-Host ""
-Write-Host "[5/5] Validacao concluida"
-
-Write-Host ""
-Write-Host "WISE ERP PROJECT OK"
+Write-Host "`n[3/3] Validacao concluida"
+Write-Host "WISE ERP PROJECT OK" -ForegroundColor Green
